@@ -1,11 +1,6 @@
 <?php
 
-/** 
- * I want to add the MultiProcessor as a composer package, but for now I just wanted to commit this project to github. 
- *
- * To make this example work you'll need to have the psr\log composer package and add the path to the composer autoloader in $pathToVendor
- */
-$pathToVendor = __DIR__ . '/../vendor/';
+$pathToVendor = __DIR__ . '/../../../';
 
 require_once $pathToVendor . 'autoload.php';
 
