@@ -1,0 +1,22 @@
+{
+  "name": "shawty81/multiprocessor",
+  "description": "Easy usable class for very fast and memory efficient scripts, processing lots of data by utilizing the power of pcntl_fork()",
+  "authors": [
+    {
+      "name": "Eelco Verbeek",
+      "email": "eelcoverbeek@gmail.com"
+    }
+  ],
+  "license": "Apache-2.0",
+  "require": {
+    "psr/log": "^1.1"
+  },
+  "require-dev": {
+
+  },
+  "autoload": {
+    "psr-4": {
+      "Shawty\\MultiProcessor\\": "src"
+    }
+  }
+}

@@ -1,0 +1,9 @@
+### Project stuff
+/vendor/
+composer.lock
+
+### JetBrains stuff
+*.iml
+.idea/
+*.ipr
+*.iws
