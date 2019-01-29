@@ -1,6 +1,6 @@
 <?php
 
-namespace MultiProcessor\ChildProcessor;
+namespace Shawty\MultiProcessor\ChildProcessor;
 
 interface ChildProcessorInterface {
 

@@ -3,9 +3,9 @@
 require_once __DIR__ . '/autoloader.php';
 require_once 'ChildProcessor/Example.php';
 
-use MultiProcessor\MultiProcessor;
-use MultiProcessor\Iterator\ArrayIterator;
-use MultiProcessor\Log\CommandLineLogger;
+use Shawty\MultiProcessor\MultiProcessor;
+use Shawty\MultiProcessor\Iterator\ArrayIterator;
+use Shawty\MultiProcessor\Log\CommandLineLogger;
 
 $logger = new CommandLineLogger();
 

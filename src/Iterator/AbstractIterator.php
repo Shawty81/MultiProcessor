@@ -1,6 +1,6 @@
 <?php
 
-namespace MultiProcessor\Iterator;
+namespace Shawty\MultiProcessor\Iterator;
 
 use Psr\Log\LoggerAwareTrait;
 use Psr\Log\NullLogger;

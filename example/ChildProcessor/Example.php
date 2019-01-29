@@ -1,6 +1,6 @@
 <?php
 
-use MultiProcessor\ChildProcessor\AbstractChildProcessor;
+use Shawty\MultiProcessor\ChildProcessor\AbstractChildProcessor;
 
 class Example extends AbstractChildProcessor {
 

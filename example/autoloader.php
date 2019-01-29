@@ -5,7 +5,7 @@
  *
  * To make this example work you'll need to have the psr\log composer package and add the path to the composer autoloader in $pathToVendor
  */
-$pathToVendor = __DIR__ . '/../../../vendor/';
+$pathToVendor = __DIR__ . '/../vendor/';
 
 require_once $pathToVendor . 'autoload.php';
 

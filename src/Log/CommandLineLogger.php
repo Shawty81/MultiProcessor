@@ -1,6 +1,6 @@
 <?php
 
-namespace MultiProcessor\Log;
+namespace Shawty\MultiProcessor\Log;
 
 use Psr\Log\AbstractLogger;
 

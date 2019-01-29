@@ -1,6 +1,6 @@
 <?php
 
-namespace MultiProcessor\Iterator;
+namespace Shawty\MultiProcessor\Iterator;
 
 interface IteratorInterface {
 

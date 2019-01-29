@@ -1,6 +1,6 @@
 <?php
 
-namespace MultiProcessor;
+namespace Shawty\MultiProcessor;
 
 use \DateTime;
 use Psr\Log\LoggerAwareTrait;
