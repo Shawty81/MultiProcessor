@@ -90,6 +90,11 @@ class MultiProcessor {
 					// if there is no chunk, exit the process
 					if(empty($chunk)) exit(0);
 
+                    // If your iterator and ChildProcessor use the same persistent connections some external form of storage (for example MySQL), this is the moment to drop those connections
+                    if($this->iterator->hasConnections()) {
+                        $this->iterator->dropConnections();
+                    }
+
 					// Do whatever needs to be done
 					$this->childProcessor->process($chunk);
 
@@ -101,13 +106,7 @@ class MultiProcessor {
 	}
 
 	private function fork() {
-		$pid = pcntl_fork();
-
-		// If your iterator and ChildProcessor use the same persistant connections some external form of storage (for example MySQL), this is the moment to drop those connections
-		if($pid != -1 && $this->iterator->hasConnections()) {
-			$this->iterator->dropConnections();
-		}
-		return $pid;
+		return pcntl_fork();
 	}
 
 
