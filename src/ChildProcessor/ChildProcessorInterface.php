@@ -1,12 +1,16 @@
 <?php
 
-namespace Shawty\MultiProcessor\ChildProcessor;
+namespace MultiProcessor\ChildProcessor;
 
-interface ChildProcessorInterface {
+interface ChildProcessorInterface
+{
+    public function init(): void;
 
-	public function init();
-	public function process(array $chunk);
-	public function finish();
+    /**
+     * @param array<mixed> $chunk
+     * @return void
+     */
+    public function process(array $chunk): void;
+    public function finish(): void;
 
 }
-

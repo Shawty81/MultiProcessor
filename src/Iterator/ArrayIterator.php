@@ -1,46 +1,65 @@
 <?php
 
-namespace Shawty\MultiProcessor\Iterator;
+namespace MultiProcessor\Iterator;
 
-class ArrayIterator extends AbstractIterator {
+class ArrayIterator extends AbstractIterator
+{
+    /**
+     * @var array<mixed>
+     */
+    private array $array = [];
+    private int $position;
 
-	private $array = [];
-	private $position;
+    public function init(): void
+    {
+        $this->position = 0;
+    }
 
-	public function init() {
-		$this->position = 0;
-	}
-	
-	public function getChunk(): array {
-		$chunk = [];
-		
-		while(count($chunk) < $this->chunkSize) {
-			if(isset($this->array[$this->position])) {
-				$chunk[] = $this->array[$this->position++];
-			}
-			else {
-				break;
-			}
-		}
+    /**
+     * @inheritDoc
+     */
+    public function getChunk(): array
+    {
+        $chunk = [];
 
-		return $chunk;
-	}
+        for ($i = 0; $i < $this->chunkSize; $i++) {
+            if (!isset($this->array[$this->position])) {
+                break;
+            }
 
-	public function setArray(array $array) {
-		$this->array = $array;
-	}
+            $chunk[] = $this->array[$this->position++];
+        }
 
-	public function getNumberOfChunks(): int {
-		return ceil(count($this->array) / $this->chunkSize);
-	}
+        //        while(count($chunk) < $this->chunkSize) {
+        //            if(isset($this->array[$this->position])) {
+        //                $chunk[] = $this->array[$this->position++];
+        //            } else {
+        //                break;
+        //            }
+        //        }
 
-	public function hasConnections(): bool {
-		return false;
-	}
+        return $chunk;
+    }
 
-	public function finish() {
+    /**
+     * @param array<mixed> $array
+     * @return void
+     */
+    public function setArray(array $array): void
+    {
+        $this->array = $array;
+    }
 
-	}
+    public function getNumberOfChunks(): int
+    {
+        return (int) ceil(count($this->array) / $this->chunkSize);
+    }
+
+    public function dropConnections(): void
+    {
+        // noop
+    }
+
+    public function finish(): void {}
 
 }
-
