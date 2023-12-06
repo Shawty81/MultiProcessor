@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.5/phpunit.xsd"
+        backupGlobals="false"
+        colors="true"
+        bootstrap="vendor/autoload.php"
+        cacheDirectory="tmp/.phpunit.cache"
+>
+  <coverage/>
+  <testsuites>
+    <testsuite name="Multiprocessor">
+      <directory>tests</directory>
+    </testsuite>
+  </testsuites>
+  <!-- Add any additional configuration as needed -->
+  <source>
+    <include>
+      <directory suffix=".php">src</directory>
+    </include>
+  </source>
+</phpunit>
