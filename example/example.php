@@ -51,8 +51,7 @@ $logger = new CommandLineLogger();
 $childProcessor = new Processor();
 $childProcessor->setLogger($logger);
 
-$multiProcessor = new MultiProcessor($iterator, $childProcessor);
-$multiProcessor->setMaxChildren(10);
+$multiProcessor = new MultiProcessor($iterator, $childProcessor, 10);
 $multiProcessor->setLogger($logger);
 
 $multiProcessor->run();
