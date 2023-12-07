@@ -24,10 +24,10 @@
   },
   "scripts": {
     "check": [
-      "phpunit",
       "php-cs-fixer fix",
+      "phpmd src text phpmd.xml",
       "phpstan analyse",
-      "phpmd src text phpmd.xml"
+      "phpunit"
     ],
     "test": "phpunit",
     "stan": "phpstan analyse",

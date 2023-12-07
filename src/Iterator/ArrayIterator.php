@@ -2,7 +2,7 @@
 
 namespace MultiProcessor\Iterator;
 
-class ArrayIterator extends AbstractIterator
+final class ArrayIterator extends AbstractIterator
 {
     /**
      * @var array<mixed>
@@ -30,14 +30,6 @@ class ArrayIterator extends AbstractIterator
             $chunk[] = $this->array[$this->position++];
         }
 
-        //        while(count($chunk) < $this->chunkSize) {
-        //            if(isset($this->array[$this->position])) {
-        //                $chunk[] = $this->array[$this->position++];
-        //            } else {
-        //                break;
-        //            }
-        //        }
-
         return $chunk;
     }
 
@@ -60,6 +52,9 @@ class ArrayIterator extends AbstractIterator
         // noop
     }
 
-    public function finish(): void {}
+    public function finish(): void
+    {
+        // noop
+    }
 
 }

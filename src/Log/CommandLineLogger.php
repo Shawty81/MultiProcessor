@@ -4,7 +4,7 @@ namespace MultiProcessor\Log;
 
 use Psr\Log\AbstractLogger;
 
-class CommandLineLogger extends AbstractLogger
+final class CommandLineLogger extends AbstractLogger
 {
     /**
      * @param $level
