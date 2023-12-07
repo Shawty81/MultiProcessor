@@ -3,40 +3,30 @@
 namespace MultiProcessor;
 
 use DateTime;
-use Exception;
-use Psr\Log\LoggerAwareTrait;
 use MultiProcessor\ChildProcessor\ChildProcessorInterface;
+use MultiProcessor\ChildrenPool\Child;
+use MultiProcessor\ChildrenPool\ChildrenPool;
 use MultiProcessor\Iterator\IteratorInterface;
+use Psr\Log\LoggerAwareTrait;
 use RuntimeException;
 
 class MultiProcessor
 {
     use LoggerAwareTrait;
 
-    protected IteratorInterface $iterator;
-    protected ChildProcessorInterface $childProcessor;
+    private readonly ChildrenPool $childrenPool;
 
-    protected int $maxChildren;
+    private int $totalChunks;
+    private int|false $parentPid;
+    private int $startTime;
 
-    protected int $childCounter = 0;
-    protected int $totalChunks;
-    protected int|false $parentPid = false;
-
-    protected int $startTime;
-
-    protected int $endTime;
-
-    public function __construct(Iterator\AbstractIterator $iterator, ChildProcessor\AbstractChildProcessor $childProcessor)
-    {
-        $this->iterator = $iterator;
-        $this->childProcessor = $childProcessor;
-
+    public function __construct(
+        private readonly IteratorInterface $iterator,
+        private readonly ChildProcessorInterface $childProcessor,
+        private readonly int $maxChildren,
+    ) {
         $this->parentPid = getmypid();
-    }
-
-    public function setMaxChildren(int $maxChildren): void
-    {
-        $this->maxChildren = $maxChildren;
+        $this->childrenPool = new ChildrenPool();
     }
 
     public function run(): void
@@ -52,12 +42,9 @@ class MultiProcessor
 
     private function init(): void
     {
-        if(!isset($this->maxChildren)) {
-            throw new Exception('Please call MultiProcessor::setMaxChildren(int) before calling MultiProcessor::run()');
-        }
-
         $this->startTime = time();
         $this->logger?->info('Starting MultiProcessor');
+        $this->logger?->info('Parent pid: {pid}', ['pid' => $this->parentPid]);
         $this->logger?->info('');
 
         $this->childProcessor->init();
@@ -73,7 +60,7 @@ class MultiProcessor
                 // If the chunk is empty it means the script is almost done
                 if(empty($chunk)) {
                     // Wait for all children to exit before breaking the while loop
-                    while($this->childCounter > 0) {
+                    while($this->childrenPool->numberOfChildren() > 0) {
                         $this->waitOnChildToExit();
                     }
 
@@ -86,7 +73,7 @@ class MultiProcessor
                     // Something is very wrong
                     throw new RuntimeException('Something is very wrong.');
                 } elseif($pid) {
-                    $this->processParent();
+                    $this->processParent($pid, $chunk);
                     continue;
                 }
 
@@ -100,12 +87,18 @@ class MultiProcessor
         return pcntl_fork();
     }
 
-    private function processParent(): void
+    /**
+     * @param int $pid
+     * @param mixed[] $chunk
+     *
+     * @return void
+     */
+    private function processParent(int $pid, array $chunk): void
     {
-        $this->childCounter++;
+        $this->childrenPool->addChild(new Child($pid, $chunk));
 
         // If number of children is equal or bigger than maxChildren. Wait for a child to exit
-        if($this->childCounter >= $this->maxChildren) {
+        if($this->childrenPool->numberOfChildren() >= $this->maxChildren) {
             $this->waitOnChildToExit();
         }
     }
@@ -118,9 +111,6 @@ class MultiProcessor
      */
     private function processChild(array $chunk): void
     {
-        // if there is no chunk, exit the process
-        // if(empty($chunk)) exit(0);
-
         // If your iterator and ChildProcessor use the same persistent connections some external form of storage (for example MySQL), this is the moment to drop those connections
         $this->iterator->dropConnections();
 
@@ -157,8 +147,7 @@ class MultiProcessor
             }
         }
 
-        // A Child is done, continueing script, update progressBar (to be implemented) and remove 1 child
-        $this->childCounter--;
+        $this->childrenPool->removeChild($childPid);
     }
 
     private function finish(): void
@@ -166,10 +155,10 @@ class MultiProcessor
         $this->childProcessor->finish();
         $this->iterator->finish();
 
-        $this->endTime = time();
+        $endTime = time();
 
         $dateTimeFrom = new DateTime('@' . $this->startTime);
-        $dateTimeTill = new DateTime('@' . $this->endTime);
+        $dateTimeTill = new DateTime('@' . $endTime);
 
         $time = $dateTimeFrom->diff($dateTimeTill)->format('%h hours, %i minutes and %s seconds');
 
@@ -177,7 +166,10 @@ class MultiProcessor
 
         $this->logger?->info('MultiProcessor done!');
 
+        $this->logger?->info('');
+
         $this->logger?->info('Total time spent: {time}', ['time' => $time]);
+        $this->logger?->info('Processed {chunks} chunks', ['chunks' => $this->totalChunks]);
     }
 
 }
