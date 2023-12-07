@@ -1,15 +1,19 @@
 <?php
 
-namespace Shawty\MultiProcessor\Iterator;
+namespace MultiProcessor\Iterator;
 
-interface IteratorInterface {
+interface IteratorInterface
+{
+    public function setChunkSize(int $size): void;
+    public function init(): void;
+    public function finish(): void;
 
-	public function setChunkSize($size);
-	public function init();
-	public function finish();
-	public function getChunk(): array;
-	public function getNumberOfChunks(): int;
-	public function hasConnections(): bool;
+    /**
+     * @return array<mixed>
+     */
+    public function getChunk(): array;
+    public function getNumberOfChunks(): int;
+
+    public function dropConnections(): void;
 
 }
-

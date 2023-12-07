@@ -1,6 +1,7 @@
 ### Project stuff
 /vendor/
 composer.lock
+/tmp
 
 ### JetBrains stuff
 *.iml
