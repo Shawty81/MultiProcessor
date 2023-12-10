@@ -2,13 +2,17 @@
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
-use MultiProcessor\ChildProcessor\AbstractChildProcessor;
+use MultiProcessor\ChildProcessor\ChildProcessorInterface;
 use MultiProcessor\Iterator\ArrayIterator;
 use MultiProcessor\Log\CommandLineLogger;
 use MultiProcessor\MultiProcessor;
+use MultiProcessor\Settings;
+use Psr\Log\LoggerAwareTrait;
 
-class Processor extends AbstractChildProcessor
+class Processor implements ChildProcessorInterface
 {
+    use LoggerAwareTrait;
+
     public function init(): void {}
 
     public function process(array $chunk): void
@@ -44,15 +48,21 @@ $iterator->setArray([
     'is going to sleep()',
     'and pretend to be doing stuff.',
 ]);
-$iterator->setChunkSize(1);
 
 $logger = new CommandLineLogger();
 
 $childProcessor = new Processor();
 $childProcessor->setLogger($logger);
 
-$multiProcessor = new MultiProcessor($iterator, $childProcessor, 10);
-$multiProcessor->setLogger($logger);
+$settings = (new Settings())
+    ->setIterator($iterator)
+    ->setChildProcessor($childProcessor)
+    ->setLogger($logger)
+    ->setChunkSize(1)
+    ->setMaxChildren(10)
+;
+
+$multiProcessor = new MultiProcessor($settings);
 
 $multiProcessor->run();
 

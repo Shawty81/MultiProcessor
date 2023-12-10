@@ -2,7 +2,7 @@
 
 namespace MultiProcessor\Iterator;
 
-final class ArrayIterator extends AbstractIterator
+final class ArrayIterator implements IteratorInterface
 {
     /**
      * @var array<mixed>
@@ -18,11 +18,11 @@ final class ArrayIterator extends AbstractIterator
     /**
      * @inheritDoc
      */
-    public function getChunk(): array
+    public function getChunk(int $size): array
     {
         $chunk = [];
 
-        for ($i = 0; $i < $this->chunkSize; $i++) {
+        for ($i = 0; $i < $size; $i++) {
             if (!isset($this->array[$this->position])) {
                 break;
             }
@@ -42,9 +42,9 @@ final class ArrayIterator extends AbstractIterator
         $this->array = $array;
     }
 
-    public function getNumberOfChunks(): int
+    public function getNumberOfChunks(int $chunkSize): int
     {
-        return (int) ceil(count($this->array) / $this->chunkSize);
+        return (int) ceil(count($this->array) / $chunkSize);
     }
 
     public function dropConnections(): void

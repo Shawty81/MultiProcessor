@@ -5,6 +5,7 @@ namespace MultiProcessor\Tests;
 use MultiProcessor\ChildProcessor\ChildProcessorInterface;
 use MultiProcessor\Iterator\IteratorInterface;
 use MultiProcessor\MultiProcessor;
+use MultiProcessor\Settings;
 use PHPUnit\Framework\TestCase;
 
 class MultiProcessorTest extends TestCase
@@ -24,7 +25,13 @@ class MultiProcessorTest extends TestCase
             ->expects($this->once())
             ->method('init');
 
-        $mp = new MultiProcessor($iterator, $childProcessor, 10);
+        $settings = (new Settings())
+            ->setIterator($iterator)
+            ->setChildProcessor($childProcessor)
+            ->setMaxChildren(10)
+        ;
+
+        $mp = new MultiProcessor($settings);
 
         $mp->run();
     }
@@ -44,7 +51,13 @@ class MultiProcessorTest extends TestCase
             ->expects($this->once())
             ->method('finish');
 
-        $mp = new MultiProcessor($iterator, $childProcessor, 10);
+        $settings = (new Settings())
+            ->setIterator($iterator)
+            ->setChildProcessor($childProcessor)
+            ->setMaxChildren(10)
+        ;
+
+        $mp = new MultiProcessor($settings);
 
         $mp->run();
     }
@@ -62,7 +75,13 @@ class MultiProcessorTest extends TestCase
 
         $childProcessor = $this->createMock(ChildProcessorInterface::class);
 
-        $mp = new MultiProcessor($iterator, $childProcessor, 10);
+        $settings = (new Settings())
+            ->setIterator($iterator)
+            ->setChildProcessor($childProcessor)
+            ->setMaxChildren(10)
+        ;
+
+        $mp = new MultiProcessor($settings);
 
         $mp->run();
     }
