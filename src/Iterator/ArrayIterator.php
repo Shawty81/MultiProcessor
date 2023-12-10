@@ -2,6 +2,8 @@
 
 namespace MultiProcessor\Iterator;
 
+use MultiProcessor\Queue\Chunk;
+
 final class ArrayIterator implements IteratorInterface
 {
     /**
@@ -15,22 +17,19 @@ final class ArrayIterator implements IteratorInterface
         $this->position = 0;
     }
 
-    /**
-     * @inheritDoc
-     */
-    public function getChunk(int $size): array
+    public function getChunk(int $size): Chunk
     {
-        $chunk = [];
+        $data = [];
 
         for ($i = 0; $i < $size; $i++) {
             if (!isset($this->array[$this->position])) {
                 break;
             }
 
-            $chunk[] = $this->array[$this->position++];
+            $data[] = $this->array[$this->position++];
         }
 
-        return $chunk;
+        return new Chunk($data);
     }
 
     /**

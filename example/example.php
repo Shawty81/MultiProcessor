@@ -6,6 +6,7 @@ use MultiProcessor\ChildProcessor\ChildProcessorInterface;
 use MultiProcessor\Iterator\ArrayIterator;
 use MultiProcessor\Log\CommandLineLogger;
 use MultiProcessor\MultiProcessor;
+use MultiProcessor\Queue\Chunk;
 use MultiProcessor\Settings;
 use Psr\Log\LoggerAwareTrait;
 
@@ -15,9 +16,9 @@ class Processor implements ChildProcessorInterface
 
     public function init(): void {}
 
-    public function process(array $chunk): void
+    public function process(Chunk $chunk): void
     {
-        foreach($chunk as $row) {
+        foreach($chunk->data as $row) {
             $seconds = floor(strlen($row) / 2);
 
             $this->logger->info(

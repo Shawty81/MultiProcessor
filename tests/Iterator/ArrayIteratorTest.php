@@ -3,6 +3,7 @@
 namespace MultiProcessor\Tests\Iterator;
 
 use MultiProcessor\Iterator\ArrayIterator;
+use MultiProcessor\Queue\Chunk;
 use PHPUnit\Framework\TestCase;
 
 class ArrayIteratorTest extends TestCase
@@ -25,7 +26,7 @@ class ArrayIteratorTest extends TestCase
 
         $chunk = $iterator->getChunk($size);
 
-        $this->assertCount($size, $chunk);
+        $this->assertCount($size, $chunk->data);
     }
 
     /**
@@ -68,8 +69,8 @@ class ArrayIteratorTest extends TestCase
         $chunk = $iterator->getChunk($size);
         $chunk2 = $iterator->getChunk($size);
 
-        $this->assertCount($size, $chunk);
-        $this->assertCount($size, $chunk2);
+        $this->assertCount($size, $chunk->data);
+        $this->assertCount($size, $chunk2->data);
     }
 
     /**
@@ -107,7 +108,7 @@ class ArrayIteratorTest extends TestCase
 
         $chunk = $iterator->getChunk($size);
 
-        $this->assertCount($expected, $chunk);
+        $this->assertCount($expected, $chunk->data);
     }
 
     /**
@@ -130,13 +131,13 @@ class ArrayIteratorTest extends TestCase
      *
      * @param mixed[] $data
      * @param int $size
-     * @param mixed[] $expected1
-     * @param mixed[] $expected2
-     * @param mixed[] $expected3
+     * @param Chunk $expected1
+     * @param Chunk $expected2
+     * @param Chunk $expected3
      *
      * @return void
      */
-    public function itCreatesTheCorrectChunksInOrder(array $data, int $size, array $expected1, array $expected2, array $expected3): void
+    public function itCreatesTheCorrectChunksInOrder(array $data, int $size, Chunk $expected1, Chunk $expected2, Chunk $expected3): void
     {
         $iterator = new ArrayIterator();
         $iterator->setArray($data);
@@ -147,9 +148,9 @@ class ArrayIteratorTest extends TestCase
         $chunk2 = $iterator->getChunk($size);
         $chunk3 = $iterator->getChunk($size);
 
-        $this->assertSame($expected1, $chunk1);
-        $this->assertSame($expected2, $chunk2);
-        $this->assertSame($expected3, $chunk3);
+        $this->assertSame($expected1->data, $chunk1->data);
+        $this->assertSame($expected2->data, $chunk2->data);
+        $this->assertSame($expected3->data, $chunk3->data);
     }
 
     /**
@@ -161,9 +162,9 @@ class ArrayIteratorTest extends TestCase
             [
                 'data' => ['1', '2', '3', '4', '5'],
                 'size' => 2,
-                'expected1' => ['1', '2'],
-                'expected2' => ['3', '4'],
-                'expected3' => ['5'],
+                'expected1' => new Chunk(['1', '2']),
+                'expected2' => new Chunk(['3', '4']),
+                'expected3' => new Chunk(['5']),
             ],
         ];
     }

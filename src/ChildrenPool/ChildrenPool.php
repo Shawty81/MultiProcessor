@@ -14,9 +14,13 @@ final class ChildrenPool
         $this->children[$child->pid] = $child;
     }
 
-    public function removeChild(int $pid): void
+    public function removeChild(int $pid): Child
     {
+        $child = $this->children[$pid];
+
         unset($this->children[$pid]);
+
+        return $child;
     }
 
     public function numberOfChildren(): int

@@ -7,6 +7,8 @@ use MultiProcessor\ChildProcessor\ChildProcessorInterface;
 use MultiProcessor\ChildrenPool\Child;
 use MultiProcessor\ChildrenPool\ChildrenPool;
 use MultiProcessor\Iterator\IteratorInterface;
+use MultiProcessor\Queue\Chunk;
+use MultiProcessor\Queue\Queue;
 use Psr\Log\LoggerAwareTrait;
 use RuntimeException;
 
@@ -17,6 +19,7 @@ class MultiProcessor
     private readonly IteratorInterface $iterator;
     private readonly ChildProcessorInterface $childProcessor;
     private readonly ChildrenPool $childrenPool;
+    private readonly Queue $queue;
     private int $totalChunks;
     private int|false $parentPid;
     private int $startTime;
@@ -34,6 +37,7 @@ class MultiProcessor
         }
 
         $this->childrenPool = new ChildrenPool();
+        $this->queue = new Queue();
 
         $this->parentPid = getmypid();
     }
@@ -64,10 +68,10 @@ class MultiProcessor
     {
         declare(ticks=1) {
             while(1) {
-                $chunk = $this->iterator->getChunk($this->settings->getChunkSize());
+                $chunk = $this->getChunk();
 
-                // If the chunk is empty it means the script is almost done
-                if(empty($chunk)) {
+                // If there are no chunks left it means the script is almost done
+                if($chunk === null) {
                     // Wait for all children to exit before breaking the while loop
                     while($this->childrenPool->numberOfChildren() > 0) {
                         $this->waitOnChildToExit();
@@ -91,18 +95,29 @@ class MultiProcessor
         }
     }
 
+    private function getChunk(): ?Chunk
+    {
+        $queuedChunk = $this->queue->getChunk();
+
+        if ($queuedChunk !== null) {
+            return $queuedChunk;
+        }
+
+        $chunk = $this->iterator->getChunk($this->settings->getChunkSize());
+
+        if (empty($chunk->data)) {
+            return null;
+        }
+
+        return $chunk;
+    }
+
     private function fork(): int
     {
         return pcntl_fork();
     }
 
-    /**
-     * @param int $pid
-     * @param mixed[] $chunk
-     *
-     * @return void
-     */
-    private function processParent(int $pid, array $chunk): void
+    private function processParent(int $pid, Chunk $chunk): void
     {
         $this->childrenPool->addChild(new Child($pid, $chunk));
 
@@ -113,12 +128,9 @@ class MultiProcessor
     }
 
     /**
-     * @param mixed[] $chunk
-     * @return void
-     *
      * @SuppressWarnings(PHPMD.ExitExpression)
      */
-    private function processChild(array $chunk): void
+    private function processChild(Chunk $chunk): never
     {
         // If your iterator and ChildProcessor use the same persistent connections some external form of storage (for example MySQL), this is the moment to drop those connections
         $this->iterator->dropConnections();

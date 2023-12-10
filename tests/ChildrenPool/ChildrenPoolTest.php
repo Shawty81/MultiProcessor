@@ -4,6 +4,7 @@ namespace MultiProcessor\Tests\ChildrenPool;
 
 use MultiProcessor\ChildrenPool\Child;
 use MultiProcessor\ChildrenPool\ChildrenPool;
+use MultiProcessor\Queue\Chunk;
 use PHPUnit\Framework\TestCase;
 
 class ChildrenPoolTest extends TestCase
@@ -15,8 +16,8 @@ class ChildrenPoolTest extends TestCase
     {
         $pool = new ChildrenPool();
 
-        $pool->addChild(new Child(1, ['1']));
-        $pool->addChild(new Child(2, ['2']));
+        $pool->addChild(new Child(1, new Chunk(['1'])));
+        $pool->addChild(new Child(2, new Chunk(['2'])));
 
         $this->assertSame(2, $pool->numberOfChildren());
 
