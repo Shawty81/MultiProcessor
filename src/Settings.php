@@ -19,6 +19,8 @@ final class Settings
     private int $chunkSize = 10;
     private bool $retryOnFatal = true;
 
+    private bool $exitOnFatal = false;
+
     public function getIterator(): IteratorInterface
     {
         return $this->iterator;
@@ -87,6 +89,18 @@ final class Settings
     public function setLogger(?LoggerInterface $logger): self
     {
         $this->logger = $logger;
+
+        return $this;
+    }
+
+    public function isExitOnFatal(): bool
+    {
+        return $this->exitOnFatal;
+    }
+
+    public function setExitOnFatal(bool $exitOnFatal): self
+    {
+        $this->exitOnFatal = $exitOnFatal;
 
         return $this;
     }

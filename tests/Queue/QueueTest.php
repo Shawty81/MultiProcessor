@@ -48,4 +48,21 @@ class QueueTest extends TestCase
 
         $this->assertNull($result);
     }
+
+    /**
+     * @test
+     */
+    public function itCalculatesQueueSize(): void
+    {
+        $queue = new Queue();
+
+        $queue->addChunk(new Chunk(['1']));
+        $this->assertSame(1, $queue->size());
+
+        $queue->addChunk(new Chunk(['2']));
+        $this->assertSame(2, $queue->size());
+
+        $queue->getChunk();
+        $this->assertSame(1, $queue->size());
+    }
 }

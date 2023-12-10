@@ -16,4 +16,9 @@ class Queue
     {
         return array_shift($this->chunks);
     }
+
+    public function size(): int
+    {
+        return count($this->chunks);
+    }
 }
