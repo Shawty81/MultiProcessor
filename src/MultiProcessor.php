@@ -9,11 +9,12 @@ use MultiProcessor\ChildrenPool\ChildrenPool;
 use MultiProcessor\Iterator\IteratorInterface;
 use MultiProcessor\Queue\Chunk;
 use MultiProcessor\Queue\Queue;
+use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use RuntimeException;
 use Throwable;
 
-class MultiProcessor
+class MultiProcessor implements LoggerAwareInterface
 {
     use LoggerAwareTrait;
 
