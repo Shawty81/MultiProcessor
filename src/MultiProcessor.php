@@ -11,6 +11,7 @@ use MultiProcessor\Queue\Chunk;
 use MultiProcessor\Queue\Queue;
 use Psr\Log\LoggerAwareTrait;
 use RuntimeException;
+use Throwable;
 
 class MultiProcessor
 {
@@ -67,32 +68,41 @@ class MultiProcessor
     private function startProcessing(): void
     {
         declare(ticks=1) {
-            while(1) {
-                $chunk = $this->getChunk();
-
-                // If there are no chunks left it means the script is almost done
-                if($chunk === null) {
-                    // Wait for all children to exit before breaking the while loop
-                    while($this->childrenPool->numberOfChildren() > 0) {
-                        $this->waitOnChildToExit();
-                    }
-
-                    break;
-                }
-
-                $pid = $this->fork();
-
-                if($pid == -1) {
-                    // Something is very wrong
-                    throw new RuntimeException('Something is very wrong.');
-                } elseif($pid) {
-                    $this->processParent($pid, $chunk);
-                    continue;
-                }
-
-                $this->processChild($chunk);
-            }
+            do {
+                $loop = $this->loop();
+            } while ($loop);
         }
+    }
+
+    private function loop(): bool
+    {
+        $chunk = $this->getChunk();
+
+        // If there are no chunks left it means the script is almost done
+        if ($chunk === null) {
+            // Wait for all children to exit before breaking the while loop
+            while($this->childrenPool->numberOfChildren() > 0) {
+                $this->waitOnChildToExit();
+
+                if ($this->queue->size() > 0) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        $pid = $this->fork();
+
+        if ($pid == -1) {
+            // Something is very wrong
+            throw new RuntimeException('Something is very wrong.');
+        } elseif($pid) {
+            $this->processParent($pid, $chunk);
+            return true;
+        }
+
+        $this->processChild($chunk);
     }
 
     private function getChunk(): ?Chunk
@@ -122,7 +132,7 @@ class MultiProcessor
         $this->childrenPool->addChild(new Child($pid, $chunk));
 
         // If number of children is equal or bigger than max children. Wait for a child to exit
-        if($this->childrenPool->numberOfChildren() >= $this->settings->getMaxChildren()) {
+        if ($this->childrenPool->numberOfChildren() >= $this->settings->getMaxChildren()) {
             $this->waitOnChildToExit();
         }
     }
@@ -132,11 +142,15 @@ class MultiProcessor
      */
     private function processChild(Chunk $chunk): never
     {
-        // If your iterator and ChildProcessor use the same persistent connections some external form of storage (for example MySQL), this is the moment to drop those connections
-        $this->iterator->dropConnections();
+        try {
+            // If your iterator and ChildProcessor use the same persistent connections some external form of storage (for example MySQL), this is the moment to drop those connections
+            $this->iterator->dropConnections();
 
-        // Do whatever needs to be done
-        $this->childProcessor->process($chunk);
+            // Do whatever needs to be done
+            $this->childProcessor->process($chunk);
+        } catch (Throwable) {
+            exit(255);
+        }
 
         // Child process is done, exit cleanly
         exit(0);
@@ -149,9 +163,10 @@ class MultiProcessor
     {
         // Waits for a child to stop
         $childPid = pcntl_waitpid(0, $status);
+        $child = $this->childrenPool->removeChild($childPid);
 
         // child exited
-        if(pcntl_wifexited($status)) {
+        if (pcntl_wifexited($status)) {
             // Check the exit status
             switch(pcntl_wexitstatus($status)) {
                 case 1:
@@ -160,15 +175,49 @@ class MultiProcessor
                     // child exited correctly
                     break;
                 case 255:
-                    // Child fataled. For now, we are not going to do anything with this
-                    break;
+                    $this->logger?->alert('Child (pid: {childPid}) exited with an error.', ['childPid' => $child->pid]);
+                    $this->processError($child);
+
+                    return;
                 default:
-                    $this->logger?->info('Child (pid: ' . $childPid . ') exited with unknown status [ ' . pcntl_wexitstatus($status) . ' ]');
+                    $this->logger?->info(
+                        'Child (pid: {childPid}) exited with unknown status [ {status} ].',
+                        ['childPid' => $child->pid, 'status' => pcntl_wexitstatus($status)]
+                    );
                     exit();
             }
         }
+    }
 
-        $this->childrenPool->removeChild($childPid);
+    private function processError(Child $child): void
+    {
+        if ($this->settings->isExitOnFatal()) {
+            $this->killChildrenAndExit();
+        }
+
+        if ($this->settings->isRetryOnFatal()) {
+            $this->logger?->info('Queueing chunk from Child (pid: {childPid}) to be retried.', ['childPid' => $child->pid]);
+            $this->queue->addChunk($child->chunk);
+        }
+    }
+
+    /**
+     * @SuppressWarnings(PHPMD.ExitExpression)
+     */
+    private function killChildrenAndExit(): never
+    {
+        $this->logger?->critical('');
+        $this->logger?->critical('Initiate killing of children.');
+        $this->logger?->critical('');
+
+        foreach ($this->childrenPool->getChildren() as $child) {
+            $this->logger?->critical('Killing child (pid: {childPid}).', ['childPid' => $child->pid]);
+            posix_kill($child->pid, SIGKILL);
+        }
+
+        $this->logger?->critical('');
+        $this->logger?->critical('Killed all children, MultiProcessor aborted successfully!');
+        exit();
     }
 
     private function finish(): void

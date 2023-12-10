@@ -26,6 +26,13 @@ class Processor implements ChildProcessorInterface
                 ['pid' => getmypid(), 'seconds' => $seconds]
             );
 
+            // There is an 80% chance this child fails halfway through processing
+            $error = mt_rand(0, 10) > 8;
+            if ($error) {
+                sleep((int) floor($seconds / 2));
+                throw new Exception('test');
+            }
+
             sleep($seconds);
         }
 
@@ -60,7 +67,7 @@ $settings = (new Settings())
     ->setChildProcessor($childProcessor)
     ->setLogger($logger)
     ->setChunkSize(1)
-    ->setMaxChildren(10)
+    ->setMaxChildren(5)
 ;
 
 $multiProcessor = new MultiProcessor($settings);

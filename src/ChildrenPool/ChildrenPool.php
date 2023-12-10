@@ -27,4 +27,12 @@ final class ChildrenPool
     {
         return count($this->children);
     }
+
+    /**
+     * @return Child[]
+     */
+    public function getChildren(): array
+    {
+        return array_values($this->children);
+    }
 }
