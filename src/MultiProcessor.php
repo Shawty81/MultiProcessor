@@ -14,26 +14,35 @@ class MultiProcessor
 {
     use LoggerAwareTrait;
 
+    private readonly IteratorInterface $iterator;
+    private readonly ChildProcessorInterface $childProcessor;
     private readonly ChildrenPool $childrenPool;
-
     private int $totalChunks;
     private int|false $parentPid;
     private int $startTime;
 
     public function __construct(
-        private readonly IteratorInterface $iterator,
-        private readonly ChildProcessorInterface $childProcessor,
-        private readonly int $maxChildren,
+        private readonly Settings $settings
     ) {
-        $this->parentPid = getmypid();
+        $this->settings->validate();
+
+        $this->iterator = $this->settings->getIterator();
+        $this->childProcessor = $this->settings->getChildProcessor();
+
+        if ($this->settings->getLogger() !== null) {
+            $this->setLogger($this->settings->getLogger());
+        }
+
         $this->childrenPool = new ChildrenPool();
+
+        $this->parentPid = getmypid();
     }
 
     public function run(): void
     {
         $this->init();
 
-        $this->totalChunks = $this->iterator->getNumberOfChunks();
+        $this->totalChunks = $this->iterator->getNumberOfChunks($this->settings->getChunkSize());
 
         $this->startProcessing();
 
@@ -55,7 +64,7 @@ class MultiProcessor
     {
         declare(ticks=1) {
             while(1) {
-                $chunk = $this->iterator->getChunk();
+                $chunk = $this->iterator->getChunk($this->settings->getChunkSize());
 
                 // If the chunk is empty it means the script is almost done
                 if(empty($chunk)) {
@@ -97,8 +106,8 @@ class MultiProcessor
     {
         $this->childrenPool->addChild(new Child($pid, $chunk));
 
-        // If number of children is equal or bigger than maxChildren. Wait for a child to exit
-        if($this->childrenPool->numberOfChildren() >= $this->maxChildren) {
+        // If number of children is equal or bigger than max children. Wait for a child to exit
+        if($this->childrenPool->numberOfChildren() >= $this->settings->getMaxChildren()) {
             $this->waitOnChildToExit();
         }
     }

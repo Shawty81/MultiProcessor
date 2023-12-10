@@ -20,11 +20,10 @@ class ArrayIteratorTest extends TestCase
     {
         $iterator = new ArrayIterator();
         $iterator->setArray($data);
-        $iterator->setChunkSize($size);
 
         $iterator->init();
 
-        $chunk = $iterator->getChunk();
+        $chunk = $iterator->getChunk($size);
 
         $this->assertCount($size, $chunk);
     }
@@ -63,12 +62,11 @@ class ArrayIteratorTest extends TestCase
     {
         $iterator = new ArrayIterator();
         $iterator->setArray($data);
-        $iterator->setChunkSize($size);
 
         $iterator->init();
 
-        $chunk = $iterator->getChunk();
-        $chunk2 = $iterator->getChunk();
+        $chunk = $iterator->getChunk($size);
+        $chunk2 = $iterator->getChunk($size);
 
         $this->assertCount($size, $chunk);
         $this->assertCount($size, $chunk2);
@@ -104,11 +102,10 @@ class ArrayIteratorTest extends TestCase
     {
         $iterator = new ArrayIterator();
         $iterator->setArray($data);
-        $iterator->setChunkSize($size);
 
         $iterator->init();
 
-        $chunk = $iterator->getChunk();
+        $chunk = $iterator->getChunk($size);
 
         $this->assertCount($expected, $chunk);
     }
@@ -143,13 +140,12 @@ class ArrayIteratorTest extends TestCase
     {
         $iterator = new ArrayIterator();
         $iterator->setArray($data);
-        $iterator->setChunkSize($size);
 
         $iterator->init();
 
-        $chunk1 = $iterator->getChunk();
-        $chunk2 = $iterator->getChunk();
-        $chunk3 = $iterator->getChunk();
+        $chunk1 = $iterator->getChunk($size);
+        $chunk2 = $iterator->getChunk($size);
+        $chunk3 = $iterator->getChunk($size);
 
         $this->assertSame($expected1, $chunk1);
         $this->assertSame($expected2, $chunk2);
@@ -186,9 +182,8 @@ class ArrayIteratorTest extends TestCase
     {
         $iterator = new ArrayIterator();
         $iterator->setArray($data);
-        $iterator->setChunkSize($chunkSize);
 
-        $this->assertSame($expected, $iterator->getNumberOfChunks());
+        $this->assertSame($expected, $iterator->getNumberOfChunks($chunkSize));
     }
 
     /**

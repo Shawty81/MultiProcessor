@@ -20,5 +20,4 @@ final class CommandLineLogger extends AbstractLogger
 
         printf(date('H:i:s') . ' [' . strtoupper(substr($level, 0, 1)) . ']  ' . $message . PHP_EOL);
     }
-
 }
