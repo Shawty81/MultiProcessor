@@ -1,0 +1,36 @@
+name: Sanity check
+run-name: Run PHPunit, PHPStan and PHPMD to check if whatever is committed is sane
+on:
+  workflow_dispatch:
+  pull_request:
+permissions:
+  contents: read
+  pull-requests: read
+concurrency:
+  group: '${{ github.workflow }} @ ${{ github.event.pull_request.head.label || github.head_ref || github.ref }}'
+  cancel-in-progress: true
+jobs:
+  sanity-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.3
+          extensions: pcntl
+          coverage: none
+
+      - name: Install Composer dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Execute tests
+        run: vendor/bin/phpunit
+
+      - name: Execute PHPStan
+        run: vendor/bin/phpstan analyse
+
+      - name: Execute PHPMD
+        run: vendor/bin/phpmd src text phpmd.xml
