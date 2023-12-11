@@ -9,6 +9,7 @@ use MultiProcessor\ChildrenPool\ChildrenPool;
 use MultiProcessor\Iterator\IteratorInterface;
 use MultiProcessor\Queue\Chunk;
 use MultiProcessor\Queue\Queue;
+use MultiProcessor\SigHandling\SigHandler;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use RuntimeException;
@@ -22,8 +23,9 @@ class MultiProcessor implements LoggerAwareInterface
     private readonly ChildProcessorInterface $childProcessor;
     private readonly ChildrenPool $childrenPool;
     private readonly Queue $queue;
+    private readonly SigHandler $sigHandler;
     private int $totalChunks;
-    private int|false $parentPid;
+    private int $parentPid;
     private int $startTime;
 
     public function __construct(
@@ -40,8 +42,10 @@ class MultiProcessor implements LoggerAwareInterface
 
         $this->childrenPool = new ChildrenPool();
         $this->queue = new Queue();
+        $this->parentPid = posix_getpid();
 
-        $this->parentPid = getmypid();
+        $this->sigHandler = new SigHandler($this->parentPid);
+        $this->sigHandler->registerShutdownCallback(fn() => $this->shutdown());
     }
 
     public function run(): void
@@ -193,7 +197,7 @@ class MultiProcessor implements LoggerAwareInterface
     private function processError(Child $child): void
     {
         if ($this->settings->isExitOnFatal()) {
-            $this->killChildrenAndExit();
+            $this->shutdown();
         }
 
         if ($this->settings->isRetryOnFatal()) {
@@ -205,7 +209,7 @@ class MultiProcessor implements LoggerAwareInterface
     /**
      * @SuppressWarnings(PHPMD.ExitExpression)
      */
-    private function killChildrenAndExit(): never
+    private function shutdown(): never
     {
         $this->logger?->critical('');
         $this->logger?->critical('Initiate killing of children.');
@@ -218,6 +222,7 @@ class MultiProcessor implements LoggerAwareInterface
 
         $this->logger?->critical('');
         $this->logger?->critical('Killed all children, MultiProcessor aborted successfully!');
+
         exit();
     }
 
