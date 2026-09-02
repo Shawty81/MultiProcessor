@@ -1,8 +1,11 @@
 name: Sanity check
-run-name: Run PHPunit, PHPStan and PHPMD to check if whatever is committed is sane
+run-name: Run PHPUnit, PHPStan, PHPMD and PHP-CS-Fixer to check if whatever is committed is sane
 on:
   workflow_dispatch:
   pull_request:
+  push:
+    branches:
+      - master
 permissions:
   contents: read
   pull-requests: read
@@ -11,6 +14,49 @@ concurrency:
   cancel-in-progress: true
 jobs:
   sanity-check:
+    name: Sanity check (PHP ${{ matrix.php-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php-version:
+          - '8.4'
+          - '8.5'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          extensions: pcntl, posix
+          coverage: none
+
+      # This is a library and deliberately ships no composer.lock, so there is nothing to
+      # install from - `update` resolves against the declared constraints.
+      - name: Install Composer dependencies
+        run: composer update --prefer-dist --no-interaction --no-progress
+
+      - name: Check code style
+        run: vendor/bin/php-cs-fixer fix --dry-run --diff
+
+      - name: Execute tests
+        run: vendor/bin/phpunit
+
+      - name: Execute PHPStan
+        run: vendor/bin/phpstan analyse --memory-limit=512M
+
+      - name: Execute PHPMD
+        run: vendor/bin/phpmd src text phpmd.xml
+
+  lowest-dependencies:
+    # Proves the declared minimum constraints actually resolve and work, rather than just
+    # being asserted. Pinned to the lowest supported PHP so this is a true floor test.
+    # Only the test suite runs here: the static analysers would be resolved to their own
+    # lowest versions too, and their findings drift between releases, which would turn
+    # this job into a report on tooling age rather than on the constraints.
+    name: Lowest dependencies (PHP 8.4)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -19,18 +65,12 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: 8.3
-          extensions: pcntl
+          php-version: '8.4'
+          extensions: pcntl, posix
           coverage: none
 
-      - name: Install Composer dependencies
-        run: composer install --prefer-dist --no-interaction --no-progress
+      - name: Install lowest Composer dependencies
+        run: composer update --prefer-lowest --prefer-stable --prefer-dist --no-interaction --no-progress
 
       - name: Execute tests
         run: vendor/bin/phpunit
-
-      - name: Execute PHPStan
-        run: vendor/bin/phpstan analyse
-
-      - name: Execute PHPMD
-        run: vendor/bin/phpmd src text phpmd.xml

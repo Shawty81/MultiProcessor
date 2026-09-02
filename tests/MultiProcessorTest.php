@@ -7,13 +7,12 @@ use MultiProcessor\Iterator\IteratorInterface;
 use MultiProcessor\MultiProcessor;
 use MultiProcessor\Queue\Chunk;
 use MultiProcessor\Settings;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 class MultiProcessorTest extends TestCase
 {
-    /**
-     * @test
-     */
+    #[Test]
     public function itInitializesCorrectly(): void
     {
         $iterator = $this->createMock(IteratorInterface::class);
@@ -30,7 +29,7 @@ class MultiProcessorTest extends TestCase
             ->expects($this->once())
             ->method('init');
 
-        $settings = (new Settings())
+        $settings = new Settings()
             ->setIterator($iterator)
             ->setChildProcessor($childProcessor)
             ->setMaxChildren(10)
@@ -41,9 +40,7 @@ class MultiProcessorTest extends TestCase
         $mp->run();
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function itFinishesCorrectly(): void
     {
         $iterator = $this->createMock(IteratorInterface::class);
@@ -60,7 +57,7 @@ class MultiProcessorTest extends TestCase
             ->expects($this->once())
             ->method('finish');
 
-        $settings = (new Settings())
+        $settings = new Settings()
             ->setIterator($iterator)
             ->setChildProcessor($childProcessor)
             ->setMaxChildren(10)
@@ -71,9 +68,7 @@ class MultiProcessorTest extends TestCase
         $mp->run();
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function itGetsChunksAndStopsOnEmptyChunk(): void
     {
         $iterator = $this->createMock(IteratorInterface::class);
@@ -88,7 +83,7 @@ class MultiProcessorTest extends TestCase
 
         $childProcessor = $this->createMock(ChildProcessorInterface::class);
 
-        $settings = (new Settings())
+        $settings = new Settings()
             ->setIterator($iterator)
             ->setChildProcessor($childProcessor)
             ->setMaxChildren(10)

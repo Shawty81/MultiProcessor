@@ -18,7 +18,7 @@ class Processor implements ChildProcessorInterface
 
     public function process(Chunk $chunk): void
     {
-        foreach($chunk->data as $row) {
+        foreach ($chunk->data as $row) {
             $seconds = floor(strlen($row) / 2);
 
             $this->logger->info(
@@ -62,7 +62,7 @@ $logger = new CommandLineLogger();
 $childProcessor = new Processor();
 $childProcessor->setLogger($logger);
 
-$settings = (new Settings())
+$settings = new Settings()
     ->setIterator($iterator)
     ->setChildProcessor($childProcessor)
     ->setLogger($logger)

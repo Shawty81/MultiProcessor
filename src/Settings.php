@@ -8,7 +8,7 @@ use Psr\Log\LoggerInterface;
 use RuntimeException;
 
 /**
- * @SuppressWarnings(PHPMD.ExcessivePublicCount)
+ * @SuppressWarnings("PHPMD.ExcessivePublicCount")
  */
 final class Settings
 {

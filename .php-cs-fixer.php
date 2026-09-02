@@ -7,8 +7,7 @@ $finder = (new PhpCsFixer\Finder())
 return (new PhpCsFixer\Config())
     ->setRules([
         '@PER-CS' => true,
-        '@PHP82Migration' => true,
+        '@PHP84Migration' => true,
     ])
     ->setFinder($finder)
     ->setCacheFile(__DIR__ . '/tmp/.php-cs-fixer.cache');
-;
