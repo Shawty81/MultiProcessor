@@ -14,9 +14,13 @@ final class ChildrenPool
         $this->children[$child->pid] = $child;
     }
 
-    public function removeChild(int $pid): Child
+    /**
+     * Returns null when the pid is not in the pool, which happens whenever something
+     * other than one of our own children is reaped. Callers have to handle that.
+     */
+    public function removeChild(int $pid): ?Child
     {
-        $child = $this->children[$pid];
+        $child = $this->children[$pid] ?? null;
 
         unset($this->children[$pid]);
 

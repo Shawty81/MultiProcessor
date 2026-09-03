@@ -15,7 +15,7 @@ class SettingsTest extends TestCase
     public function itValidatesMissingIterator(): void
     {
         $settings = new Settings()
-            ->setChildProcessor($this->createMock(ChildProcessorInterface::class))
+            ->setChildProcessor($this->createStub(ChildProcessorInterface::class))
         ;
 
         $this->expectException(RuntimeException::class);
@@ -27,11 +27,65 @@ class SettingsTest extends TestCase
     public function itValidatesMissingChildProcessor(): void
     {
         $settings = new Settings()
-            ->setIterator($this->createMock(IteratorInterface::class))
+            ->setIterator($this->createStub(IteratorInterface::class))
         ;
 
         $this->expectException(RuntimeException::class);
 
         $settings->validate();
+    }
+
+    #[Test]
+    public function itValidatesChunkSize(): void
+    {
+        $settings = $this->completeSettings()->setChunkSize(0);
+
+        $this->expectException(RuntimeException::class);
+
+        $settings->validate();
+    }
+
+    #[Test]
+    public function itValidatesMaxChildren(): void
+    {
+        $settings = $this->completeSettings()->setMaxChildren(0);
+
+        $this->expectException(RuntimeException::class);
+
+        $settings->validate();
+    }
+
+    #[Test]
+    public function itValidatesMaxRetries(): void
+    {
+        $settings = $this->completeSettings()->setMaxRetries(-1);
+
+        $this->expectException(RuntimeException::class);
+
+        $settings->validate();
+    }
+
+    #[Test]
+    public function itAcceptsSettingsThatAreWithinBounds(): void
+    {
+        $settings = $this->completeSettings()
+            ->setChunkSize(1)
+            ->setMaxChildren(1)
+            ->setMaxRetries(0)
+        ;
+
+        $settings->validate();
+
+        $this->assertSame(1, $settings->getChunkSize());
+        $this->assertSame(1, $settings->getMaxChildren());
+        $this->assertSame(0, $settings->getMaxRetries());
+    }
+
+    private function completeSettings(): Settings
+    {
+        return new Settings()
+            ->setIterator($this->createStub(IteratorInterface::class))
+            ->setChildProcessor($this->createStub(ChildProcessorInterface::class))
+        ;
     }
 }

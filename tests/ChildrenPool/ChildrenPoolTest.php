@@ -59,4 +59,15 @@ class ChildrenPoolTest extends TestCase
         $children = $pool->getChildren();
         $this->assertSame([], $children);
     }
+
+    #[Test]
+    public function itReturnsNullWhenTheChildIsNotInThePool(): void
+    {
+        $pool = new ChildrenPool();
+
+        $pool->addChild(new Child(1, new Chunk(['1'])));
+
+        $this->assertNull($pool->removeChild(-1));
+        $this->assertSame(1, $pool->numberOfChildren());
+    }
 }

@@ -18,6 +18,7 @@ final class Settings
     private int $maxChildren = 1;
     private int $chunkSize = 10;
     private bool $retryOnFatal = true;
+    private int $maxRetries = 1;
 
     private bool $exitOnFatal = false;
 
@@ -69,6 +70,18 @@ final class Settings
         return $this;
     }
 
+    public function getMaxRetries(): int
+    {
+        return $this->maxRetries;
+    }
+
+    public function setMaxRetries(int $maxRetries): self
+    {
+        $this->maxRetries = $maxRetries;
+
+        return $this;
+    }
+
     public function isRetryOnFatal(): bool
     {
         return $this->retryOnFatal;
@@ -113,6 +126,18 @@ final class Settings
 
         if (!isset($this->childProcessor)) {
             throw new RuntimeException('Your MultiProcessor Settings are missing an ChildProcessor');
+        }
+
+        if ($this->chunkSize < 1) {
+            throw new RuntimeException('Your MultiProcessor Settings need a chunkSize of at least 1');
+        }
+
+        if ($this->maxChildren < 1) {
+            throw new RuntimeException('Your MultiProcessor Settings need a maxChildren of at least 1');
+        }
+
+        if ($this->maxRetries < 0) {
+            throw new RuntimeException('Your MultiProcessor Settings need a maxRetries of 0 or more');
         }
     }
 }

@@ -14,13 +14,4 @@ parameters:
 		-
 			identifier: argument.type
 			path: src/MultiProcessor.php
-			message: '#^Parameter \#1 \$status of function pcntl_(wifexited|wexitstatus) expects int, mixed given\.$#'
-
-		# PSR-3 defines $level and the $context values as genuinely mixed, and this logger
-		# stringifies them the way PHP always has. Narrowing them would mean coercing or
-		# rejecting values the interface permits - a runtime behaviour change, which is out
-		# of scope for the toolchain phase. Revisit with the language rewrite.
-		-
-			identifier: argument.type
-			path: src/Log/CommandLineLogger.php
-			message: '#^Parameter \#(2 \$replace of function str_replace|1 \$string of function substr) expects .*, mixed given\.$#'
+			message: '#^Parameter \#1 \$status of function pcntl_(wifexited|wifsignaled|wexitstatus|wtermsig) expects int, mixed given\.$#'
