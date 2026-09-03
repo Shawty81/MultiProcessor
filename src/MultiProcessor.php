@@ -86,7 +86,7 @@ class MultiProcessor implements LoggerAwareInterface
         // If there are no chunks left it means the script is almost done
         if ($chunk === null) {
             // Wait for all children to exit before breaking the while loop
-            while($this->childrenPool->numberOfChildren() > 0) {
+            while ($this->childrenPool->numberOfChildren() > 0) {
                 $this->waitOnChildToExit();
 
                 if ($this->queue->size() > 0) {
@@ -102,7 +102,7 @@ class MultiProcessor implements LoggerAwareInterface
         if ($pid == -1) {
             // Something is very wrong
             throw new RuntimeException('Something is very wrong.');
-        } elseif($pid) {
+        } elseif ($pid) {
             $this->processParent($pid, $chunk);
             return true;
         }
@@ -143,7 +143,7 @@ class MultiProcessor implements LoggerAwareInterface
     }
 
     /**
-     * @SuppressWarnings(PHPMD.ExitExpression)
+     * @SuppressWarnings("PHPMD.ExitExpression")
      */
     private function processChild(Chunk $chunk): never
     {
@@ -162,7 +162,7 @@ class MultiProcessor implements LoggerAwareInterface
     }
 
     /**
-     * @SuppressWarnings(PHPMD.ExitExpression)
+     * @SuppressWarnings("PHPMD.ExitExpression")
      */
     private function waitOnChildToExit(): void
     {
@@ -173,7 +173,7 @@ class MultiProcessor implements LoggerAwareInterface
         // child exited
         if (pcntl_wifexited($status)) {
             // Check the exit status
-            switch(pcntl_wexitstatus($status)) {
+            switch (pcntl_wexitstatus($status)) {
                 case 1:
                     // exited because there is no chunk
                 case 0:
@@ -207,7 +207,7 @@ class MultiProcessor implements LoggerAwareInterface
     }
 
     /**
-     * @SuppressWarnings(PHPMD.ExitExpression)
+     * @SuppressWarnings("PHPMD.ExitExpression")
      */
     private function shutdown(): never
     {

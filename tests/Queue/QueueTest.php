@@ -4,13 +4,12 @@ namespace MultiProcessor\Tests\Queue;
 
 use MultiProcessor\Queue\Chunk;
 use MultiProcessor\Queue\Queue;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 class QueueTest extends TestCase
 {
-    /**
-     * @test
-     */
+    #[Test]
     public function itStoresAndGetsChunks(): void
     {
         $queue = new Queue();
@@ -23,9 +22,7 @@ class QueueTest extends TestCase
         $this->assertSame($expected, $result);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function itReturnsNullWhenNoQueuedChunks(): void
     {
         $queue = new Queue();
@@ -35,9 +32,7 @@ class QueueTest extends TestCase
         $this->assertNull($result);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function itReturnsNullAfterAllChunksAreGotten(): void
     {
         $queue = new Queue();
@@ -49,9 +44,7 @@ class QueueTest extends TestCase
         $this->assertNull($result);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function itCalculatesQueueSize(): void
     {
         $queue = new Queue();

@@ -4,19 +4,17 @@ namespace MultiProcessor\Tests\Iterator;
 
 use MultiProcessor\Iterator\ArrayIterator;
 use MultiProcessor\Queue\Chunk;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 class ArrayIteratorTest extends TestCase
 {
     /**
-     * @test
-     * @dataProvider itCreatesTheCorrectSizedChunkProvider
-     *
      * @param mixed[] $data
-     * @param int $size
-     *
-     * @return void
      */
+    #[Test]
+    #[DataProvider('itCreatesTheCorrectSizedChunkProvider')]
     public function itCreatesTheCorrectSizedChunk(array $data, int $size): void
     {
         $iterator = new ArrayIterator();
@@ -30,7 +28,7 @@ class ArrayIteratorTest extends TestCase
     }
 
     /**
-     * @return mixed[]
+     * @return array<int, array{data: mixed[], size: int}>
      */
     public static function itCreatesTheCorrectSizedChunkProvider(): array
     {
@@ -51,14 +49,10 @@ class ArrayIteratorTest extends TestCase
     }
 
     /**
-     * @test
-     * @dataProvider itCreatesNextChunkProvider
-     *
      * @param mixed[] $data
-     * @param int $size
-     *
-     * @return void
      */
+    #[Test]
+    #[DataProvider('itCreatesNextChunkProvider')]
     public function itCreatesNextChunk(array $data, int $size): void
     {
         $iterator = new ArrayIterator();
@@ -74,7 +68,7 @@ class ArrayIteratorTest extends TestCase
     }
 
     /**
-     * @return mixed[]
+     * @return array<int, array{data: mixed[], size: int}>
      */
     public static function itCreatesNextChunkProvider(): array
     {
@@ -91,14 +85,10 @@ class ArrayIteratorTest extends TestCase
     }
 
     /**
-     * @test
-     * @dataProvider itCreatesSmallerChunkWhenNotEnoughItemsProvider
-     *
      * @param mixed[] $data
-     * @param int $size
-     *
-     * @return void
      */
+    #[Test]
+    #[DataProvider('itCreatesSmallerChunkWhenNotEnoughItemsProvider')]
     public function itCreatesSmallerChunkWhenNotEnoughItems(array $data, int $size, int $expected): void
     {
         $iterator = new ArrayIterator();
@@ -112,7 +102,7 @@ class ArrayIteratorTest extends TestCase
     }
 
     /**
-     * @return mixed[]
+     * @return array<int, array{data: mixed[], size: int, expected: int}>
      */
     public static function itCreatesSmallerChunkWhenNotEnoughItemsProvider(): array
     {
@@ -126,17 +116,10 @@ class ArrayIteratorTest extends TestCase
     }
 
     /**
-     * @test
-     * @dataProvider itCreatesTheCorrectChunksInOrderProvider
-     *
      * @param mixed[] $data
-     * @param int $size
-     * @param Chunk $expected1
-     * @param Chunk $expected2
-     * @param Chunk $expected3
-     *
-     * @return void
      */
+    #[Test]
+    #[DataProvider('itCreatesTheCorrectChunksInOrderProvider')]
     public function itCreatesTheCorrectChunksInOrder(array $data, int $size, Chunk $expected1, Chunk $expected2, Chunk $expected3): void
     {
         $iterator = new ArrayIterator();
@@ -154,7 +137,7 @@ class ArrayIteratorTest extends TestCase
     }
 
     /**
-     * @return mixed[]
+     * @return array<int, array{data: mixed[], size: int, expected1: Chunk, expected2: Chunk, expected3: Chunk}>
      */
     public static function itCreatesTheCorrectChunksInOrderProvider(): array
     {
@@ -170,15 +153,10 @@ class ArrayIteratorTest extends TestCase
     }
 
     /**
-     * @test
-     * @dataProvider itCalculatesNumberOfChunkProvider
-     *
      * @param mixed[] $data
-     * @param int $chunkSize
-     * @param int $expected
-     *
-     * @return void
      */
+    #[Test]
+    #[DataProvider('itCalculatesNumberOfChunkProvider')]
     public function itCalculatesNumberOfChunk(array $data, int $chunkSize, int $expected): void
     {
         $iterator = new ArrayIterator();
@@ -188,39 +166,39 @@ class ArrayIteratorTest extends TestCase
     }
 
     /**
-     * @return mixed[]
+     * @return array<int, array{data: mixed[], chunkSize: int, expected: int}>
      */
     public static function itCalculatesNumberOfChunkProvider(): array
     {
         return [
             [
                 'data' => ['1', '2', '3', '4', '5'],
-                'size' => 1,
+                'chunkSize' => 1,
                 'expected' => 5,
             ],
             [
                 'data' => ['1', '2', '3', '4', '5'],
-                'size' => 2,
+                'chunkSize' => 2,
                 'expected' => 3,
             ],
             [
                 'data' => ['1', '2', '3', '4', '5'],
-                'size' => 3,
+                'chunkSize' => 3,
                 'expected' => 2,
             ],
             [
                 'data' => ['1', '2', '3', '4', '5'],
-                'size' => 4,
+                'chunkSize' => 4,
                 'expected' => 2,
             ],
             [
                 'data' => ['1', '2', '3', '4', '5'],
-                'size' => 5,
+                'chunkSize' => 5,
                 'expected' => 1,
             ],
             [
                 'data' => ['1', '2', '3', '4', '5'],
-                'size' => 6,
+                'chunkSize' => 6,
                 'expected' => 1,
             ],
         ];

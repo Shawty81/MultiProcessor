@@ -29,7 +29,7 @@ final class SigHandler
     }
 
     /**
-     * @SuppressWarnings(PHPMD.ExitExpression)
+     * @SuppressWarnings("PHPMD.ExitExpression")
      */
     public function handle(int $signal): void
     {

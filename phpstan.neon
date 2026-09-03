@@ -1,5 +1,26 @@
 parameters:
-	level: 8
+	# 10 is the highest level PHPStan 2.x offers. Pinned to the number rather than "max"
+	# so that a future minor release adding a level cannot silently start failing CI.
+	level: 10
 	paths:
 		- src
 		- tests
+	ignoreErrors:
+		# pcntl_waitpid() reports the child status through a by-reference out-parameter.
+		# Both bundled stubs declare it as an untyped `&$status`, so PHPStan widens it to
+		# mixed after the call and offers no way to say otherwise (the stubs carry no
+		# @param-out). The code is correct: pcntl_waitpid only ever writes an int there.
+		# Casting is not an alternative - level 10 rejects casting mixed as well.
+		-
+			identifier: argument.type
+			path: src/MultiProcessor.php
+			message: '#^Parameter \#1 \$status of function pcntl_(wifexited|wexitstatus) expects int, mixed given\.$#'
+
+		# PSR-3 defines $level and the $context values as genuinely mixed, and this logger
+		# stringifies them the way PHP always has. Narrowing them would mean coercing or
+		# rejecting values the interface permits - a runtime behaviour change, which is out
+		# of scope for the toolchain phase. Revisit with the language rewrite.
+		-
+			identifier: argument.type
+			path: src/Log/CommandLineLogger.php
+			message: '#^Parameter \#(2 \$replace of function str_replace|1 \$string of function substr) expects .*, mixed given\.$#'

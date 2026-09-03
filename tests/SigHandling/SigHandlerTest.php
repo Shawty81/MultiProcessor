@@ -3,41 +3,42 @@
 namespace MultiProcessor\Tests\SigHandling;
 
 use MultiProcessor\SigHandling\SigHandler;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 class SigHandlerTest extends TestCase
 {
-    /**
-     * @test
-     */
+    #[Test]
     public function itCallShutdownCallback(): void
     {
         $handler = new SigHandler(posix_getpid());
 
-        $shouldBeCalled = function () {
-            $this->assertTrue(true);
+        $called = false;
+        $shouldBeCalled = function () use (&$called): void {
+            $called = true;
         };
 
         $handler->registerShutdownCallback($shouldBeCalled);
 
         $handler->handle(SIGINT);
+
+        $this->assertTrue($called);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function itDoesNothingWithSigChld(): void
     {
         $handler = new SigHandler(posix_getpid());
 
-        $shouldNotBeCalled = function () {
-            $this->assertTrue(false);
+        $called = false;
+        $shouldNotBeCalled = function () use (&$called): void {
+            $called = true;
         };
 
         $handler->registerShutdownCallback($shouldNotBeCalled);
 
         $handler->handle(SIGCHLD);
 
-        $this->assertTrue(true);
+        $this->assertFalse($called);
     }
 }

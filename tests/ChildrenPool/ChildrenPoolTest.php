@@ -5,13 +5,12 @@ namespace MultiProcessor\Tests\ChildrenPool;
 use MultiProcessor\ChildrenPool\Child;
 use MultiProcessor\ChildrenPool\ChildrenPool;
 use MultiProcessor\Queue\Chunk;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 class ChildrenPoolTest extends TestCase
 {
-    /**
-     * @test
-     */
+    #[Test]
     public function itAddsRemovesAndCountsChildren(): void
     {
         $pool = new ChildrenPool();
@@ -30,9 +29,7 @@ class ChildrenPoolTest extends TestCase
         $this->assertSame(0, $pool->numberOfChildren());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function itGetsAllChildren(): void
     {
         $pool = new ChildrenPool();
