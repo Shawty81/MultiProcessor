@@ -87,7 +87,9 @@ class MultiProcessor implements LoggerAwareInterface
         if ($chunk === null) {
             // Wait for all children to exit before breaking the while loop
             while ($this->childrenPool->numberOfChildren() > 0) {
-                $this->waitOnChildToExit();
+                if (!$this->waitOnChildToExit()) {
+                    break;
+                }
 
                 if ($this->queue->size() > 0) {
                     return true;
@@ -153,7 +155,19 @@ class MultiProcessor implements LoggerAwareInterface
 
             // Do whatever needs to be done
             $this->childProcessor->process($chunk);
-        } catch (Throwable) {
+        } catch (Throwable $throwable) {
+            // Only the child has the exception, so it is the only one that can report it.
+            // The parent just sees the exit status.
+            $this->logger?->error(
+                'Child (pid: {childPid}) failed with {class}: {message}' . PHP_EOL . '{trace}',
+                [
+                    'childPid' => posix_getpid(),
+                    'class' => $throwable::class,
+                    'message' => $throwable->getMessage(),
+                    'trace' => $throwable->getTraceAsString(),
+                ]
+            );
+
             exit(255);
         }
 
@@ -162,35 +176,67 @@ class MultiProcessor implements LoggerAwareInterface
     }
 
     /**
-     * @SuppressWarnings("PHPMD.ExitExpression")
+     * Waits for a child to stop and deals with the way it stopped.
+     *
+     * Returns false when there was nothing left to reap, so that callers looping on the
+     * size of the pool cannot spin forever on a pool that no longer matches reality.
      */
-    private function waitOnChildToExit(): void
+    private function waitOnChildToExit(): bool
     {
-        // Waits for a child to stop
         $childPid = pcntl_waitpid(0, $status);
+
+        if ($childPid < 1) {
+            $this->logger?->warning('There is no child left to reap, pcntl_waitpid() returned {result}.', ['result' => $childPid]);
+
+            return false;
+        }
+
         $child = $this->childrenPool->removeChild($childPid);
 
-        // child exited
-        if (pcntl_wifexited($status)) {
-            // Check the exit status
-            switch (pcntl_wexitstatus($status)) {
-                case 1:
-                    // exited because there is no chunk
-                case 0:
-                    // child exited correctly
-                    break;
-                case 255:
-                    $this->logger?->alert('Child (pid: {childPid}) exited with an error.', ['childPid' => $child->pid]);
-                    $this->processError($child);
+        if ($child === null) {
+            $this->logger?->warning('Reaped a child (pid: {childPid}) that is not in the pool, ignoring it.', ['childPid' => $childPid]);
 
-                    return;
-                default:
-                    $this->logger?->info(
-                        'Child (pid: {childPid}) exited with unknown status [ {status} ].',
-                        ['childPid' => $child->pid, 'status' => pcntl_wexitstatus($status)]
-                    );
-                    exit();
-            }
+            return true;
+        }
+
+        // A child that was killed never got to choose an exit status of its own
+        if (pcntl_wifsignaled($status)) {
+            $signal = pcntl_wtermsig($status);
+            $this->logger?->alert('Child (pid: {childPid}) was killed by signal {signal}.', ['childPid' => $child->pid, 'signal' => $signal]);
+            $this->processError($child);
+
+            return true;
+        }
+
+        // pcntl_wexitstatus() only fails on a status pcntl_wifexited() has already rejected
+        if (pcntl_wifexited($status)) {
+            $this->processExitStatus($child, (int) pcntl_wexitstatus($status));
+        }
+
+        return true;
+    }
+
+    private function processExitStatus(Child $child, int $exitStatus): void
+    {
+        switch ($exitStatus) {
+            case 1:
+                // exited because there is no chunk
+            case 0:
+                // child exited correctly
+                return;
+            case 255:
+                $this->logger?->alert('Child (pid: {childPid}) exited with an error.', ['childPid' => $child->pid]);
+                $this->processError($child);
+
+                return;
+            default:
+                $this->logger?->info(
+                    'Child (pid: {childPid}) exited with unknown status [ {status} ].',
+                    ['childPid' => $child->pid, 'status' => $exitStatus]
+                );
+
+                // Leaving here without killing the children would orphan every one of them
+                $this->shutdown();
         }
     }
 
@@ -200,10 +246,23 @@ class MultiProcessor implements LoggerAwareInterface
             $this->shutdown();
         }
 
-        if ($this->settings->isRetryOnFatal()) {
-            $this->logger?->info('Queueing chunk from Child (pid: {childPid}) to be retried.', ['childPid' => $child->pid]);
-            $this->queue->addChunk($child->chunk);
+        if (!$this->settings->isRetryOnFatal()) {
+            return;
         }
+
+        $chunk = $child->chunk;
+
+        if ($chunk->retries >= $this->settings->getMaxRetries()) {
+            $this->logger?->alert(
+                'Chunk from Child (pid: {childPid}) failed {attempts} times, giving up on it.',
+                ['childPid' => $child->pid, 'attempts' => $chunk->retries + 1]
+            );
+
+            return;
+        }
+
+        $this->logger?->info('Queueing chunk from Child (pid: {childPid}) to be retried.', ['childPid' => $child->pid]);
+        $this->queue->addChunk($chunk->retried());
     }
 
     /**

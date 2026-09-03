@@ -14,4 +14,4 @@ parameters:
 		-
 			identifier: argument.type
 			path: src/MultiProcessor.php
-			message: '#^Parameter \#1 \$status of function pcntl_(wifexited|wexitstatus) expects int, mixed given\.$#'
+			message: '#^Parameter \#1 \$status of function pcntl_(wifexited|wifsignaled|wexitstatus|wtermsig) expects int, mixed given\.$#'

@@ -81,7 +81,7 @@ class MultiProcessorTest extends TestCase
                 new Chunk([])
             );
 
-        $childProcessor = $this->createMock(ChildProcessorInterface::class);
+        $childProcessor = $this->createStub(ChildProcessorInterface::class);
 
         $settings = new Settings()
             ->setIterator($iterator)

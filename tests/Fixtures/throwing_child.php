@@ -1,0 +1,47 @@
+<?php
+
+/**
+ * Runs a single chunk through a ChildProcessor that always throws.
+ *
+ * Reads MP_MAX_RETRIES from the environment when the scenario needs a retry limit other
+ * than the default.
+ */
+
+use MultiProcessor\ChildProcessor\ChildProcessorInterface;
+use MultiProcessor\Iterator\ArrayIterator;
+use MultiProcessor\Log\CommandLineLogger;
+use MultiProcessor\MultiProcessor;
+use MultiProcessor\Queue\Chunk;
+use MultiProcessor\Settings;
+
+require __DIR__ . '/../../vendor/autoload.php';
+
+$iterator = new ArrayIterator();
+$iterator->setArray(['the only row']);
+
+$childProcessor = new class implements ChildProcessorInterface {
+    public function init(): void {}
+
+    public function process(Chunk $chunk): void
+    {
+        throw new RuntimeException('the child blew up');
+    }
+
+    public function finish(): void {}
+};
+
+$settings = new Settings()
+    ->setIterator($iterator)
+    ->setChildProcessor($childProcessor)
+    ->setLogger(new CommandLineLogger())
+    ->setChunkSize(1)
+    ->setMaxChildren(1)
+;
+
+$maxRetries = getenv('MP_MAX_RETRIES');
+
+if ($maxRetries !== false) {
+    $settings->setMaxRetries((int) $maxRetries);
+}
+
+new MultiProcessor($settings)->run();
