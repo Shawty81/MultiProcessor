@@ -1,2 +1,15 @@
-text=auto
-eol=lf
+* text=auto eol=lf
+
+# Everything below is for developing this library, not for using it, so it stays out
+# of the archive Composer installs into a consumer's vendor directory.
+/.dockerignore      export-ignore
+/.gitattributes     export-ignore
+/.github/           export-ignore
+/.gitignore         export-ignore
+/.php-cs-fixer.php  export-ignore
+/Dockerfile         export-ignore
+/example/           export-ignore
+/phpmd.xml          export-ignore
+/phpstan.neon       export-ignore
+/phpunit.xml.dist   export-ignore
+/tests/             export-ignore

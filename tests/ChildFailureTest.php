@@ -61,6 +61,15 @@ class ChildFailureTest extends TestCase
     }
 
     #[Test]
+    public function itCountsEveryRetryInTheSummary(): void
+    {
+        $output = $this->runFixture('throwing_child.php', ['MP_MAX_RETRIES' => '3']);
+
+        $this->assertStringContainsString('Chunks to process: 1', $output);
+        $this->assertStringContainsString('Chunks handed to a child: 4', $output);
+    }
+
+    #[Test]
     public function itReportsAndRetriesAChildThatWasKilledBySignal(): void
     {
         $output = $this->runFixture('signalled_child.php');
