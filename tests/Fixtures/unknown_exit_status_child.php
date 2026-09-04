@@ -45,12 +45,12 @@ $childProcessor = new class ($markerFile) implements ChildProcessorInterface {
     public function finish(): void {}
 };
 
-$settings = new Settings()
-    ->setIterator($iterator)
-    ->setChildProcessor($childProcessor)
-    ->setLogger(new CommandLineLogger())
-    ->setChunkSize(1)
-    ->setMaxChildren(3)
-;
+$settings = new Settings(
+    iterator: $iterator,
+    childProcessor: $childProcessor,
+    logger: new CommandLineLogger(),
+    chunkSize: 1,
+    maxChildren: 3,
+);
 
 new MultiProcessor($settings)->run();

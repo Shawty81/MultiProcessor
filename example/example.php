@@ -62,13 +62,13 @@ $logger = new CommandLineLogger();
 $childProcessor = new Processor();
 $childProcessor->setLogger($logger);
 
-$settings = new Settings()
-    ->setIterator($iterator)
-    ->setChildProcessor($childProcessor)
-    ->setLogger($logger)
-    ->setChunkSize(1)
-    ->setMaxChildren(5)
-;
+$settings = new Settings(
+    iterator: $iterator,
+    childProcessor: $childProcessor,
+    logger: $logger,
+    chunkSize: 1,
+    maxChildren: 5,
+);
 
 $multiProcessor = new MultiProcessor($settings);
 

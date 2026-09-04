@@ -30,18 +30,15 @@ $childProcessor = new class implements ChildProcessorInterface {
     public function finish(): void {}
 };
 
-$settings = new Settings()
-    ->setIterator($iterator)
-    ->setChildProcessor($childProcessor)
-    ->setLogger(new CommandLineLogger())
-    ->setChunkSize(1)
-    ->setMaxChildren(1)
-;
-
 $maxRetries = getenv('MP_MAX_RETRIES');
 
-if ($maxRetries !== false) {
-    $settings->setMaxRetries((int) $maxRetries);
-}
+$settings = new Settings(
+    iterator: $iterator,
+    childProcessor: $childProcessor,
+    logger: new CommandLineLogger(),
+    chunkSize: 1,
+    maxChildren: 1,
+    maxRetries: $maxRetries === false ? 1 : (int) $maxRetries,
+);
 
 new MultiProcessor($settings)->run();
