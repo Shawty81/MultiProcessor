@@ -44,7 +44,7 @@ use MultiProcessor\Queue\Chunk;
 use MultiProcessor\Settings;
 use Psr\Log\LoggerAwareTrait;
 
-final class SquareEverything implements ChildProcessorInterface
+final class GenerateThumbnails implements ChildProcessorInterface
 {
     use LoggerAwareTrait;
 
@@ -54,11 +54,14 @@ final class SquareEverything implements ChildProcessorInterface
     #[Override]
     public function process(Chunk $chunk): void
     {
-        foreach ($chunk->data as $number) {
-            $this->logger?->info('pid {pid}: {number} squared is {result}', [
+        foreach ($chunk->data as $image) {
+            // Stands in for the real work: reading the file, resizing it and writing
+            // the result back. A quarter of a second of it, without the dependencies.
+            usleep(250_000);
+
+            $this->logger?->info('pid {pid}: resized {image}', [
                 'pid' => posix_getpid(),
-                'number' => $number,
-                'result' => $number ** 2,
+                'image' => $image,
             ]);
         }
     }
@@ -70,9 +73,12 @@ final class SquareEverything implements ChildProcessorInterface
 $logger = new CommandLineLogger();
 
 $iterator = new ArrayIterator();
-$iterator->setArray(range(1, 20));
+$iterator->setArray(array_map(
+    static fn (int $number): string => sprintf('photo-%02d.jpg', $number),
+    range(1, 20),
+));
 
-$childProcessor = new SquareEverything();
+$childProcessor = new GenerateThumbnails();
 $childProcessor->setLogger($logger);
 
 $settings = new Settings(
@@ -86,20 +92,30 @@ $settings = new Settings(
 new MultiProcessor($settings)->run();
 ```
 
-Run it and you get four children working on five numbers each, followed by a summary:
+Run it and you get four children resizing five images each, so the twenty quarter-second
+jobs take about a second and a quarter instead of five seconds:
 
 ```
 15:04:05 [I]  Starting MultiProcessor
 15:04:05 [I]  Parent pid: 4711
 15:04:05 [I]  Chunks to process: 4
 15:04:05 [I]
-15:04:05 [I]  pid 4712: 1 squared is 1
+15:04:05 [I]  pid 4712: resized photo-01.jpg
+15:04:05 [I]  pid 4713: resized photo-06.jpg
+15:04:05 [I]  pid 4714: resized photo-11.jpg
+15:04:05 [I]  pid 4715: resized photo-16.jpg
+15:04:05 [I]  pid 4712: resized photo-02.jpg
 ...
-15:04:05 [I]  MultiProcessor done!
-15:04:05 [I]
-15:04:05 [I]  Total time spent: 0 hours, 0 minutes and 0 seconds
-15:04:05 [I]  Chunks handed to a child: 4
+15:04:06 [I]  pid 4715: resized photo-20.jpg
+15:04:06 [I]
+15:04:06 [I]  MultiProcessor done!
+15:04:06 [I]
+15:04:06 [I]  Total time spent: 0 hours, 0 minutes and 1 seconds
+15:04:06 [I]  Chunks handed to a child: 4
 ```
+
+The `usleep()` is there because forking is only worth it when a record costs real time.
+[Forking is not free](#forking-is-not-free) puts a number on that.
 
 ## The two interfaces you implement
 
