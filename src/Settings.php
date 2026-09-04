@@ -3,9 +3,9 @@
 namespace MultiProcessor;
 
 use MultiProcessor\ChildProcessor\ChildProcessorInterface;
+use MultiProcessor\Exception\InvalidSettingsException;
 use MultiProcessor\Iterator\IteratorInterface;
 use Psr\Log\LoggerInterface;
-use RuntimeException;
 
 /**
  * @SuppressWarnings("PHPMD.ExcessivePublicCount")
@@ -121,23 +121,23 @@ final class Settings
     public function validate(): void
     {
         if (!isset($this->iterator)) {
-            throw new RuntimeException('Your MultiProcessor Settings are missing an Iterator');
+            throw new InvalidSettingsException('Your MultiProcessor Settings are missing an Iterator');
         }
 
         if (!isset($this->childProcessor)) {
-            throw new RuntimeException('Your MultiProcessor Settings are missing an ChildProcessor');
+            throw new InvalidSettingsException('Your MultiProcessor Settings are missing an ChildProcessor');
         }
 
         if ($this->chunkSize < 1) {
-            throw new RuntimeException('Your MultiProcessor Settings need a chunkSize of at least 1');
+            throw new InvalidSettingsException('Your MultiProcessor Settings need a chunkSize of at least 1');
         }
 
         if ($this->maxChildren < 1) {
-            throw new RuntimeException('Your MultiProcessor Settings need a maxChildren of at least 1');
+            throw new InvalidSettingsException('Your MultiProcessor Settings need a maxChildren of at least 1');
         }
 
         if ($this->maxRetries < 0) {
-            throw new RuntimeException('Your MultiProcessor Settings need a maxRetries of 0 or more');
+            throw new InvalidSettingsException('Your MultiProcessor Settings need a maxRetries of 0 or more');
         }
     }
 }

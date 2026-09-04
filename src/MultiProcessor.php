@@ -6,13 +6,13 @@ use DateTime;
 use MultiProcessor\ChildProcessor\ChildProcessorInterface;
 use MultiProcessor\ChildrenPool\Child;
 use MultiProcessor\ChildrenPool\ChildrenPool;
+use MultiProcessor\Exception\ForkFailedException;
 use MultiProcessor\Iterator\IteratorInterface;
 use MultiProcessor\Queue\Chunk;
 use MultiProcessor\Queue\Queue;
 use MultiProcessor\SigHandling\SigHandler;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
-use RuntimeException;
 use Throwable;
 
 class MultiProcessor implements LoggerAwareInterface
@@ -103,7 +103,7 @@ class MultiProcessor implements LoggerAwareInterface
 
         if ($pid == -1) {
             // Something is very wrong
-            throw new RuntimeException('Something is very wrong.');
+            throw new ForkFailedException('Something is very wrong.');
         } elseif ($pid) {
             $this->processParent($pid, $chunk);
             return true;

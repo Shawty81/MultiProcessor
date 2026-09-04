@@ -3,11 +3,11 @@
 namespace MultiProcessor\Tests;
 
 use MultiProcessor\ChildProcessor\ChildProcessorInterface;
+use MultiProcessor\Exception\InvalidSettingsException;
 use MultiProcessor\Iterator\IteratorInterface;
 use MultiProcessor\Settings;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use RuntimeException;
 
 class SettingsTest extends TestCase
 {
@@ -18,7 +18,7 @@ class SettingsTest extends TestCase
             ->setChildProcessor($this->createStub(ChildProcessorInterface::class))
         ;
 
-        $this->expectException(RuntimeException::class);
+        $this->expectException(InvalidSettingsException::class);
 
         $settings->validate();
     }
@@ -30,7 +30,7 @@ class SettingsTest extends TestCase
             ->setIterator($this->createStub(IteratorInterface::class))
         ;
 
-        $this->expectException(RuntimeException::class);
+        $this->expectException(InvalidSettingsException::class);
 
         $settings->validate();
     }
@@ -40,7 +40,7 @@ class SettingsTest extends TestCase
     {
         $settings = $this->completeSettings()->setChunkSize(0);
 
-        $this->expectException(RuntimeException::class);
+        $this->expectException(InvalidSettingsException::class);
 
         $settings->validate();
     }
@@ -50,7 +50,7 @@ class SettingsTest extends TestCase
     {
         $settings = $this->completeSettings()->setMaxChildren(0);
 
-        $this->expectException(RuntimeException::class);
+        $this->expectException(InvalidSettingsException::class);
 
         $settings->validate();
     }
@@ -60,7 +60,7 @@ class SettingsTest extends TestCase
     {
         $settings = $this->completeSettings()->setMaxRetries(-1);
 
-        $this->expectException(RuntimeException::class);
+        $this->expectException(InvalidSettingsException::class);
 
         $settings->validate();
     }
