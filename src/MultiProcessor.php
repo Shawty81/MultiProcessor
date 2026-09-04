@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace MultiProcessor;
 
-use DateTime;
 use MultiProcessor\ChildProcessor\ChildProcessorInterface;
 use MultiProcessor\ChildrenPool\Child;
 use MultiProcessor\ChildrenPool\ChildrenPool;
@@ -27,6 +26,7 @@ final class MultiProcessor implements LoggerAwareInterface
     private readonly Queue $queue;
     private readonly SigHandler $sigHandler;
     private int $totalChunks;
+    private int $chunksHandedOut = 0;
     private int $parentPid;
     private int $startTime;
 
@@ -51,11 +51,7 @@ final class MultiProcessor implements LoggerAwareInterface
     public function run(): void
     {
         $this->init();
-
-        $this->totalChunks = $this->iterator->getNumberOfChunks($this->settings->chunkSize);
-
         $this->startProcessing();
-
         $this->finish();
     }
 
@@ -64,10 +60,13 @@ final class MultiProcessor implements LoggerAwareInterface
         $this->startTime = time();
         $this->logger?->info('Starting MultiProcessor');
         $this->logger?->info('Parent pid: {pid}', ['pid' => $this->parentPid]);
-        $this->logger?->info('');
 
         $this->childProcessor->init();
         $this->iterator->init();
+
+        $this->totalChunks = $this->iterator->getNumberOfChunks($this->settings->chunkSize);
+        $this->logger?->info('Chunks to process: {chunks}', ['chunks' => $this->totalChunks]);
+        $this->logger?->info('');
     }
 
     private function startProcessing(): void
@@ -135,6 +134,7 @@ final class MultiProcessor implements LoggerAwareInterface
     private function processParent(int $pid, Chunk $chunk): void
     {
         $this->childrenPool->addChild(new Child($pid, $chunk));
+        $this->chunksHandedOut++;
 
         // If number of children is equal or bigger than max children. Wait for a child to exit
         if ($this->childrenPool->numberOfChildren() >= $this->settings->maxChildren) {
@@ -288,21 +288,27 @@ final class MultiProcessor implements LoggerAwareInterface
         $this->childProcessor->finish();
         $this->iterator->finish();
 
-        $endTime = time();
-
-        $dateTimeFrom = new DateTime('@' . $this->startTime);
-        $dateTimeTill = new DateTime('@' . $endTime);
-
-        $time = $dateTimeFrom->diff($dateTimeTill)->format('%h hours, %i minutes and %s seconds');
-
         $this->logger?->info('');
-
         $this->logger?->info('MultiProcessor done!');
-
         $this->logger?->info('');
+        $this->logger?->info('Total time spent: {time}', ['time' => $this->elapsedTime()]);
+        $this->logger?->info('Chunks handed to a child: {chunks}', ['chunks' => $this->chunksHandedOut]);
+    }
 
-        $this->logger?->info('Total time spent: {time}', ['time' => $time]);
-        $this->logger?->info('Processed {chunks} chunks', ['chunks' => $this->totalChunks]);
+    /**
+     * The hours here are the whole elapsed time, not the hours left over after whole days,
+     * so a run that lasts longer than a day is still reported truthfully.
+     */
+    private function elapsedTime(): string
+    {
+        $seconds = time() - $this->startTime;
+
+        return sprintf(
+            '%d hours, %d minutes and %d seconds',
+            intdiv($seconds, 3600),
+            intdiv($seconds % 3600, 60),
+            $seconds % 60
+        );
     }
 
 }
