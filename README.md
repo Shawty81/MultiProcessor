@@ -243,6 +243,36 @@ $settings = new Settings(
 A value outside those bounds throws `InvalidSettingsException` from the constructor, so a
 misconfigured run fails before anything is forked.
 
+### Forking is not free
+
+Every chunk costs one `pcntl_fork()` and one reap, and that cost is roughly fixed however
+much or little the chunk goes on to do. On this machine it is about 390 microseconds per
+chunk, measured by running 20000 records of trivial work (one multiplication each) through
+the library at `maxChildren: 8` and varying only `chunkSize`:
+
+| `chunkSize` | Total | Per record | Per chunk |
+| --- | --- | --- | --- |
+| `1` | 7.74 s | 387 us | 387 us |
+| `10` | 0.78 s | 38.8 us | 388 us |
+| `100` | 0.08 s | 4.0 us | 398 us |
+| `1000` | 0.01 s | 0.5 us | 520 us |
+
+The same 20000 records in a plain `foreach` take 0.0001 s in total, about 0.007 us each.
+
+Measured on 16 cores under the `php:8.5-cli` image, so treat the numbers as indicative of
+the shape rather than as a guarantee: the constant differs per machine, kernel and
+container runtime, but it is a constant either way.
+
+What it implies:
+
+- A chunk has to do substantially more than half a millisecond of work before forking it
+  pays for itself. Work that is faster than that runs quicker in a plain `foreach`, and
+  this library is pure overhead.
+- The point of a chunk is to amortise that fixed cost over many records, so the default
+  `chunkSize` of `10` is low for most real workloads. Raise it until a chunk takes long
+  enough that the fork disappears into it, while staying short enough that a chunk lost to
+  a failure is not much work to redo.
+
 ## What happens when a child fails
 
 A child fails in one of two ways, and the parent treats them the same.
