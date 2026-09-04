@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Runs a single chunk through a ChildProcessor that kills its own process, the way an
  * out of memory killer or a segfault would.
@@ -18,13 +20,16 @@ $iterator = new ArrayIterator();
 $iterator->setArray(['the only row']);
 
 $childProcessor = new class implements ChildProcessorInterface {
+    #[Override]
     public function init(): void {}
 
+    #[Override]
     public function process(Chunk $chunk): void
     {
         posix_kill(posix_getpid(), SIGKILL);
     }
 
+    #[Override]
     public function finish(): void {}
 };
 

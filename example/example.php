@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 require_once __DIR__ . '/../vendor/autoload.php';
 
 use MultiProcessor\ChildProcessor\ChildProcessorInterface;
@@ -10,18 +12,20 @@ use MultiProcessor\Queue\Chunk;
 use MultiProcessor\Settings;
 use Psr\Log\LoggerAwareTrait;
 
-class Processor implements ChildProcessorInterface
+final class Processor implements ChildProcessorInterface
 {
     use LoggerAwareTrait;
 
+    #[Override]
     public function init(): void {}
 
+    #[Override]
     public function process(Chunk $chunk): void
     {
         foreach ($chunk->data as $row) {
-            $seconds = floor(strlen($row) / 2);
+            $seconds = intdiv(strlen((string) $row), 2);
 
-            $this->logger->info(
+            $this->logger?->info(
                 'Hi I\'m pid: {pid}! And i\'m pretending to do some queries and other stuff for: {seconds} seconds',
                 ['pid' => getmypid(), 'seconds' => $seconds]
             );
@@ -29,16 +33,17 @@ class Processor implements ChildProcessorInterface
             // There is an 80% chance this child fails halfway through processing
             $error = mt_rand(0, 10) > 8;
             if ($error) {
-                sleep((int) floor($seconds / 2));
+                sleep(intdiv($seconds, 2));
                 throw new Exception('test');
             }
 
             sleep($seconds);
         }
 
-        $this->logger->info('I\'m pid: {pid}! And i\'m done now!!', ['pid' => getmypid()]);
+        $this->logger?->info('I\'m pid: {pid}! And i\'m done now!!', ['pid' => getmypid()]);
     }
 
+    #[Override]
     public function finish(): void {}
 
 }

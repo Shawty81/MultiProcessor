@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Runs a single chunk through a ChildProcessor that forks a worker of its own and reaps
  * it, which delivers a SIGCHLD to a process that is itself a child of the MultiProcessor.
@@ -24,8 +26,10 @@ $childProcessor = new class ($logger) implements ChildProcessorInterface {
         private readonly CommandLineLogger $logger
     ) {}
 
+    #[Override]
     public function init(): void {}
 
+    #[Override]
     public function process(Chunk $chunk): void
     {
         $worker = pcntl_fork();
@@ -42,6 +46,7 @@ $childProcessor = new class ($logger) implements ChildProcessorInterface {
         $this->logger->info('the child outlived its own worker');
     }
 
+    #[Override]
     public function finish(): void {}
 };
 

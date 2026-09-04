@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Runs a single chunk through a ChildProcessor that always throws.
  *
@@ -20,13 +22,16 @@ $iterator = new ArrayIterator();
 $iterator->setArray(['the only row']);
 
 $childProcessor = new class implements ChildProcessorInterface {
+    #[Override]
     public function init(): void {}
 
+    #[Override]
     public function process(Chunk $chunk): void
     {
         throw new RuntimeException('the child blew up');
     }
 
+    #[Override]
     public function finish(): void {}
 };
 

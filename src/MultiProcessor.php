@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace MultiProcessor;
 
 use DateTime;
@@ -15,7 +17,7 @@ use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use Throwable;
 
-class MultiProcessor implements LoggerAwareInterface
+final class MultiProcessor implements LoggerAwareInterface
 {
     use LoggerAwareTrait;
 

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Hands a single chunk to a child that sleeps far longer than the test is willing to
  * wait, so the parent is sitting in a blocking pcntl_waitpid() when the signal arrives.
@@ -31,8 +33,10 @@ $childProcessor = new class ($logger) implements ChildProcessorInterface {
         private readonly CommandLineLogger $logger
     ) {}
 
+    #[Override]
     public function init(): void {}
 
+    #[Override]
     public function process(Chunk $chunk): void
     {
         $this->logger->info('the child is sleeping');
@@ -40,6 +44,7 @@ $childProcessor = new class ($logger) implements ChildProcessorInterface {
         sleep(CHILD_SLEEP_SECONDS);
     }
 
+    #[Override]
     public function finish(): void {}
 };
 

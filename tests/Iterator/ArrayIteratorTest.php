@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace MultiProcessor\Tests\Iterator;
 
 use MultiProcessor\Iterator\ArrayIterator;
