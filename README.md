@@ -339,4 +339,4 @@ they are caught, logged and turned into a failed chunk, as described above.
 
 ## License
 
-Apache-2.0. See [LICENSE](LICENSE).
+MIT. See [LICENSE](LICENSE).
