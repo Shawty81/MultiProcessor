@@ -24,15 +24,8 @@ final class ArrayIterator implements IteratorInterface
     #[Override]
     public function getChunk(int $size): Chunk
     {
-        $data = [];
-
-        for ($i = 0; $i < $size; $i++) {
-            if (!isset($this->array[$this->position])) {
-                break;
-            }
-
-            $data[] = $this->array[$this->position++];
-        }
+        $data = array_slice($this->array, $this->position, $size);
+        $this->position += count($data);
 
         return new Chunk($data);
     }
@@ -43,7 +36,10 @@ final class ArrayIterator implements IteratorInterface
      */
     public function setArray(array $array): void
     {
-        $this->array = $array;
+        // Chunks are handed out by position, so anything that is not a zero indexed list
+        // - string keys, rows keyed by their id, the gaps unset() and array_filter() leave
+        // behind - has to be renumbered here or its records are never reached.
+        $this->array = array_values($array);
     }
 
     #[Override]

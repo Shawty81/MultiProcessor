@@ -205,4 +205,89 @@ class ArrayIteratorTest extends TestCase
             ],
         ];
     }
+
+    /**
+     * Every one of these shapes is a perfectly ordinary PHP array of work, and all of the
+     * records in it have to come back out.
+     *
+     * @param mixed[] $data
+     * @param mixed[] $expected
+     */
+    #[Test]
+    #[DataProvider('itYieldsEveryRecordProvider')]
+    public function itYieldsEveryRecord(array $data, array $expected, int $chunkSize, int $expectedChunks): void
+    {
+        $iterator = new ArrayIterator();
+        $iterator->setArray($data);
+
+        $this->assertSame($expectedChunks, $iterator->getNumberOfChunks($chunkSize));
+
+        $iterator->init();
+
+        $yielded = [];
+
+        while (($chunk = $iterator->getChunk($chunkSize))->data !== []) {
+            $yielded = array_merge($yielded, $chunk->data);
+
+            if (count($yielded) > count($expected)) {
+                $this->fail('The iterator yielded more records than the array holds.');
+            }
+        }
+
+        $this->assertSame($expected, $yielded);
+    }
+
+    /**
+     * @return array<string, array{data: mixed[], expected: mixed[], chunkSize: int, expectedChunks: int}>
+     */
+    public static function itYieldsEveryRecordProvider(): array
+    {
+        $withAGap = ['first', 'second', 'third'];
+        unset($withAGap[1]);
+
+        return [
+            'plain list' => [
+                'data' => ['a', 'b', 'c', 'd', 'e'],
+                'expected' => ['a', 'b', 'c', 'd', 'e'],
+                'chunkSize' => 2,
+                'expectedChunks' => 3,
+            ],
+            'list containing false' => [
+                'data' => ['a', false, 'c'],
+                'expected' => ['a', false, 'c'],
+                'chunkSize' => 2,
+                'expectedChunks' => 2,
+            ],
+            'list containing null' => [
+                'data' => ['a', null, 'c', 'd', 'e'],
+                'expected' => ['a', null, 'c', 'd', 'e'],
+                'chunkSize' => 2,
+                'expectedChunks' => 3,
+            ],
+            'string keys' => [
+                'data' => ['first' => 'a', 'second' => 'b', 'third' => 'c'],
+                'expected' => ['a', 'b', 'c'],
+                'chunkSize' => 2,
+                'expectedChunks' => 2,
+            ],
+            'list with a gap' => [
+                'data' => $withAGap,
+                'expected' => ['first', 'third'],
+                'chunkSize' => 2,
+                'expectedChunks' => 1,
+            ],
+            'array_filter() result' => [
+                'data' => array_filter(['a', '', 'c', 'd']),
+                'expected' => ['a', 'c', 'd'],
+                'chunkSize' => 2,
+                'expectedChunks' => 2,
+            ],
+            'rows keyed by database id' => [
+                'data' => [17 => 'a', 42 => 'b', 99 => 'c'],
+                'expected' => ['a', 'b', 'c'],
+                'chunkSize' => 2,
+                'expectedChunks' => 2,
+            ],
+        ];
+    }
 }
