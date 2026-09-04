@@ -3,8 +3,8 @@
 declare(strict_types=1);
 
 /**
- * Runs a single chunk through a ChildProcessor that kills its own process, the way an
- * out of memory killer or a segfault would.
+ * Runs a single chunk through a ChildProcessor that forks a worker of its own and reaps
+ * it, which delivers a SIGCHLD to a process that is itself a child of the MultiProcessor.
  */
 
 use MultiProcessor\ChildProcessor\ChildProcessorInterface;
@@ -16,17 +16,34 @@ use MultiProcessor\Settings;
 
 require __DIR__ . '/../../vendor/autoload.php';
 
+$logger = new CommandLineLogger();
+
 $iterator = new ArrayIterator();
 $iterator->setArray(['the only row']);
 
-$childProcessor = new class implements ChildProcessorInterface {
+$childProcessor = new class ($logger) implements ChildProcessorInterface {
+    public function __construct(
+        private readonly CommandLineLogger $logger
+    ) {}
+
     #[Override]
     public function init(): void {}
 
     #[Override]
     public function process(Chunk $chunk): void
     {
-        posix_kill(posix_getpid(), SIGKILL);
+        $worker = pcntl_fork();
+
+        if ($worker === 0) {
+            exit(0);
+        }
+
+        pcntl_waitpid($worker, $workerStatus);
+
+        // Long enough for an inherited handler to have been dispatched on the SIGCHLD
+        usleep(200000);
+
+        $this->logger->info('the child outlived its own worker');
     }
 
     #[Override]
@@ -36,7 +53,7 @@ $childProcessor = new class implements ChildProcessorInterface {
 $settings = new Settings(
     iterator: $iterator,
     childProcessor: $childProcessor,
-    logger: new CommandLineLogger(),
+    logger: $logger,
     chunkSize: 1,
     maxChildren: 1,
 );

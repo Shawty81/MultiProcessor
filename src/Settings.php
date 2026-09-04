@@ -1,143 +1,42 @@
 <?php
 
+declare(strict_types=1);
+
 namespace MultiProcessor;
 
 use MultiProcessor\ChildProcessor\ChildProcessorInterface;
+use MultiProcessor\Exception\InvalidSettingsException;
 use MultiProcessor\Iterator\IteratorInterface;
 use Psr\Log\LoggerInterface;
-use RuntimeException;
 
 /**
- * @SuppressWarnings("PHPMD.ExcessivePublicCount")
+ * These booleans configure a value object rather than switch a behaviour on a call, so
+ * the rule that reads a defaulted boolean parameter as a flag argument does not apply.
+ *
+ * @SuppressWarnings("PHPMD.BooleanArgumentFlag")
  */
-final class Settings
+final readonly class Settings
 {
-    private IteratorInterface $iterator;
-    private ChildProcessorInterface $childProcessor;
-    private ?LoggerInterface $logger = null;
-    private int $maxChildren = 1;
-    private int $chunkSize = 10;
-    private bool $retryOnFatal = true;
-    private int $maxRetries = 1;
-
-    private bool $exitOnFatal = false;
-
-    public function getIterator(): IteratorInterface
-    {
-        return $this->iterator;
-    }
-
-    public function setIterator(IteratorInterface $iterator): self
-    {
-        $this->iterator = $iterator;
-
-        return $this;
-    }
-
-    public function getChildProcessor(): ChildProcessorInterface
-    {
-        return $this->childProcessor;
-    }
-
-    public function setChildProcessor(ChildProcessorInterface $childProcessor): self
-    {
-        $this->childProcessor = $childProcessor;
-
-        return $this;
-    }
-
-    public function getMaxChildren(): int
-    {
-        return $this->maxChildren;
-    }
-
-    public function setMaxChildren(int $maxChildren): self
-    {
-        $this->maxChildren = $maxChildren;
-
-        return $this;
-    }
-
-    public function getChunkSize(): int
-    {
-        return $this->chunkSize;
-    }
-
-    public function setChunkSize(int $chunkSize): self
-    {
-        $this->chunkSize = $chunkSize;
-
-        return $this;
-    }
-
-    public function getMaxRetries(): int
-    {
-        return $this->maxRetries;
-    }
-
-    public function setMaxRetries(int $maxRetries): self
-    {
-        $this->maxRetries = $maxRetries;
-
-        return $this;
-    }
-
-    public function isRetryOnFatal(): bool
-    {
-        return $this->retryOnFatal;
-    }
-
-    public function setRetryOnFatal(bool $retryOnFatal): self
-    {
-        $this->retryOnFatal = $retryOnFatal;
-
-        return $this;
-    }
-
-    public function getLogger(): ?LoggerInterface
-    {
-        return $this->logger;
-    }
-
-    public function setLogger(?LoggerInterface $logger): self
-    {
-        $this->logger = $logger;
-
-        return $this;
-    }
-
-    public function isExitOnFatal(): bool
-    {
-        return $this->exitOnFatal;
-    }
-
-    public function setExitOnFatal(bool $exitOnFatal): self
-    {
-        $this->exitOnFatal = $exitOnFatal;
-
-        return $this;
-    }
-
-    public function validate(): void
-    {
-        if (!isset($this->iterator)) {
-            throw new RuntimeException('Your MultiProcessor Settings are missing an Iterator');
+    public function __construct(
+        public IteratorInterface $iterator,
+        public ChildProcessorInterface $childProcessor,
+        public ?LoggerInterface $logger = null,
+        public int $maxChildren = 1,
+        public int $chunkSize = 10,
+        public bool $retryOnFatal = true,
+        public int $maxRetries = 1,
+        public bool $exitOnFatal = false,
+    ) {
+        if ($chunkSize < 1) {
+            throw new InvalidSettingsException('Your MultiProcessor Settings need a chunkSize of at least 1');
         }
 
-        if (!isset($this->childProcessor)) {
-            throw new RuntimeException('Your MultiProcessor Settings are missing an ChildProcessor');
+        if ($maxChildren < 1) {
+            throw new InvalidSettingsException('Your MultiProcessor Settings need a maxChildren of at least 1');
         }
 
-        if ($this->chunkSize < 1) {
-            throw new RuntimeException('Your MultiProcessor Settings need a chunkSize of at least 1');
-        }
-
-        if ($this->maxChildren < 1) {
-            throw new RuntimeException('Your MultiProcessor Settings need a maxChildren of at least 1');
-        }
-
-        if ($this->maxRetries < 0) {
-            throw new RuntimeException('Your MultiProcessor Settings need a maxRetries of 0 or more');
+        if ($maxRetries < 0) {
+            throw new InvalidSettingsException('Your MultiProcessor Settings need a maxRetries of 0 or more');
         }
     }
 }

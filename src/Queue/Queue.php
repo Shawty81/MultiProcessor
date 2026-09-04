@@ -1,8 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace MultiProcessor\Queue;
 
-class Queue
+final class Queue
 {
     /** @var Chunk[] */
     private array $chunks = [];

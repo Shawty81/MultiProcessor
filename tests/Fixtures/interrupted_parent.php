@@ -3,8 +3,11 @@
 declare(strict_types=1);
 
 /**
- * Runs a single chunk through a ChildProcessor that kills its own process, the way an
- * out of memory killer or a segfault would.
+ * Hands a single chunk to a child that sleeps far longer than the test is willing to
+ * wait, so the parent is sitting in a blocking pcntl_waitpid() when the signal arrives.
+ *
+ * Announces its own pid first, and then announces the child, so a test knows both who to
+ * signal and when the parent has reached the wait.
  */
 
 use MultiProcessor\ChildProcessor\ChildProcessorInterface;
@@ -16,17 +19,29 @@ use MultiProcessor\Settings;
 
 require __DIR__ . '/../../vendor/autoload.php';
 
+const CHILD_SLEEP_SECONDS = 60;
+
+$logger = new CommandLineLogger();
+
+$logger->info('parent pid: {pid}', ['pid' => posix_getpid()]);
+
 $iterator = new ArrayIterator();
 $iterator->setArray(['the only row']);
 
-$childProcessor = new class implements ChildProcessorInterface {
+$childProcessor = new class ($logger) implements ChildProcessorInterface {
+    public function __construct(
+        private readonly CommandLineLogger $logger
+    ) {}
+
     #[Override]
     public function init(): void {}
 
     #[Override]
     public function process(Chunk $chunk): void
     {
-        posix_kill(posix_getpid(), SIGKILL);
+        $this->logger->info('the child is sleeping');
+
+        sleep(CHILD_SLEEP_SECONDS);
     }
 
     #[Override]
@@ -36,7 +51,7 @@ $childProcessor = new class implements ChildProcessorInterface {
 $settings = new Settings(
     iterator: $iterator,
     childProcessor: $childProcessor,
-    logger: new CommandLineLogger(),
+    logger: $logger,
     chunkSize: 1,
     maxChildren: 1,
 );

@@ -1,21 +1,23 @@
 <?php
 
+declare(strict_types=1);
+
 namespace MultiProcessor;
 
 use DateTime;
 use MultiProcessor\ChildProcessor\ChildProcessorInterface;
 use MultiProcessor\ChildrenPool\Child;
 use MultiProcessor\ChildrenPool\ChildrenPool;
+use MultiProcessor\Exception\ForkFailedException;
 use MultiProcessor\Iterator\IteratorInterface;
 use MultiProcessor\Queue\Chunk;
 use MultiProcessor\Queue\Queue;
 use MultiProcessor\SigHandling\SigHandler;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
-use RuntimeException;
 use Throwable;
 
-class MultiProcessor implements LoggerAwareInterface
+final class MultiProcessor implements LoggerAwareInterface
 {
     use LoggerAwareTrait;
 
@@ -31,13 +33,11 @@ class MultiProcessor implements LoggerAwareInterface
     public function __construct(
         private readonly Settings $settings
     ) {
-        $this->settings->validate();
+        $this->iterator = $this->settings->iterator;
+        $this->childProcessor = $this->settings->childProcessor;
 
-        $this->iterator = $this->settings->getIterator();
-        $this->childProcessor = $this->settings->getChildProcessor();
-
-        if ($this->settings->getLogger() !== null) {
-            $this->setLogger($this->settings->getLogger());
+        if ($this->settings->logger !== null) {
+            $this->setLogger($this->settings->logger);
         }
 
         $this->childrenPool = new ChildrenPool();
@@ -52,7 +52,7 @@ class MultiProcessor implements LoggerAwareInterface
     {
         $this->init();
 
-        $this->totalChunks = $this->iterator->getNumberOfChunks($this->settings->getChunkSize());
+        $this->totalChunks = $this->iterator->getNumberOfChunks($this->settings->chunkSize);
 
         $this->startProcessing();
 
@@ -72,11 +72,9 @@ class MultiProcessor implements LoggerAwareInterface
 
     private function startProcessing(): void
     {
-        declare(ticks=1) {
-            do {
-                $loop = $this->loop();
-            } while ($loop);
-        }
+        do {
+            $loop = $this->loop();
+        } while ($loop);
     }
 
     private function loop(): bool
@@ -103,7 +101,7 @@ class MultiProcessor implements LoggerAwareInterface
 
         if ($pid == -1) {
             // Something is very wrong
-            throw new RuntimeException('Something is very wrong.');
+            throw new ForkFailedException('Something is very wrong.');
         } elseif ($pid) {
             $this->processParent($pid, $chunk);
             return true;
@@ -120,7 +118,7 @@ class MultiProcessor implements LoggerAwareInterface
             return $queuedChunk;
         }
 
-        $chunk = $this->iterator->getChunk($this->settings->getChunkSize());
+        $chunk = $this->iterator->getChunk($this->settings->chunkSize);
 
         if (empty($chunk->data)) {
             return null;
@@ -139,7 +137,7 @@ class MultiProcessor implements LoggerAwareInterface
         $this->childrenPool->addChild(new Child($pid, $chunk));
 
         // If number of children is equal or bigger than max children. Wait for a child to exit
-        if ($this->childrenPool->numberOfChildren() >= $this->settings->getMaxChildren()) {
+        if ($this->childrenPool->numberOfChildren() >= $this->settings->maxChildren) {
             $this->waitOnChildToExit();
         }
     }
@@ -242,17 +240,17 @@ class MultiProcessor implements LoggerAwareInterface
 
     private function processError(Child $child): void
     {
-        if ($this->settings->isExitOnFatal()) {
+        if ($this->settings->exitOnFatal) {
             $this->shutdown();
         }
 
-        if (!$this->settings->isRetryOnFatal()) {
+        if (!$this->settings->retryOnFatal) {
             return;
         }
 
         $chunk = $child->chunk;
 
-        if ($chunk->retries >= $this->settings->getMaxRetries()) {
+        if ($chunk->retries >= $this->settings->maxRetries) {
             $this->logger?->alert(
                 'Chunk from Child (pid: {childPid}) failed {attempts} times, giving up on it.',
                 ['childPid' => $child->pid, 'attempts' => $chunk->retries + 1]

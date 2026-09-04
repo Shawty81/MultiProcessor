@@ -1,10 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace MultiProcessor\ChildrenPool;
 
 use MultiProcessor\Queue\Chunk;
 
-readonly class Child
+final readonly class Child
 {
     public function __construct(
         public int $pid,

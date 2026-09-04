@@ -1,8 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace MultiProcessor\Iterator;
 
 use MultiProcessor\Queue\Chunk;
+use Override;
 
 final class ArrayIterator implements IteratorInterface
 {
@@ -12,11 +15,13 @@ final class ArrayIterator implements IteratorInterface
     private array $array = [];
     private int $position;
 
+    #[Override]
     public function init(): void
     {
         $this->position = 0;
     }
 
+    #[Override]
     public function getChunk(int $size): Chunk
     {
         $data = [];
@@ -41,16 +46,19 @@ final class ArrayIterator implements IteratorInterface
         $this->array = $array;
     }
 
+    #[Override]
     public function getNumberOfChunks(int $chunkSize): int
     {
         return (int) ceil(count($this->array) / $chunkSize);
     }
 
+    #[Override]
     public function dropConnections(): void
     {
         // noop
     }
 
+    #[Override]
     public function finish(): void
     {
         // noop

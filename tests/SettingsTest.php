@@ -1,91 +1,82 @@
 <?php
 
+declare(strict_types=1);
+
 namespace MultiProcessor\Tests;
 
 use MultiProcessor\ChildProcessor\ChildProcessorInterface;
+use MultiProcessor\Exception\ExceptionInterface;
+use MultiProcessor\Exception\InvalidSettingsException;
 use MultiProcessor\Iterator\IteratorInterface;
 use MultiProcessor\Settings;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use RuntimeException;
 
 class SettingsTest extends TestCase
 {
     #[Test]
-    public function itValidatesMissingIterator(): void
-    {
-        $settings = new Settings()
-            ->setChildProcessor($this->createStub(ChildProcessorInterface::class))
-        ;
-
-        $this->expectException(RuntimeException::class);
-
-        $settings->validate();
-    }
-
-    #[Test]
-    public function itValidatesMissingChildProcessor(): void
-    {
-        $settings = new Settings()
-            ->setIterator($this->createStub(IteratorInterface::class))
-        ;
-
-        $this->expectException(RuntimeException::class);
-
-        $settings->validate();
-    }
-
-    #[Test]
     public function itValidatesChunkSize(): void
     {
-        $settings = $this->completeSettings()->setChunkSize(0);
+        $this->expectException(InvalidSettingsException::class);
 
-        $this->expectException(RuntimeException::class);
-
-        $settings->validate();
+        $this->settings(chunkSize: 0);
     }
 
     #[Test]
     public function itValidatesMaxChildren(): void
     {
-        $settings = $this->completeSettings()->setMaxChildren(0);
+        $this->expectException(InvalidSettingsException::class);
 
-        $this->expectException(RuntimeException::class);
-
-        $settings->validate();
+        $this->settings(maxChildren: 0);
     }
 
     #[Test]
     public function itValidatesMaxRetries(): void
     {
-        $settings = $this->completeSettings()->setMaxRetries(-1);
+        $this->expectException(InvalidSettingsException::class);
 
-        $this->expectException(RuntimeException::class);
-
-        $settings->validate();
+        $this->settings(maxRetries: -1);
     }
 
     #[Test]
     public function itAcceptsSettingsThatAreWithinBounds(): void
     {
-        $settings = $this->completeSettings()
-            ->setChunkSize(1)
-            ->setMaxChildren(1)
-            ->setMaxRetries(0)
-        ;
+        $settings = $this->settings(maxChildren: 1, chunkSize: 1, maxRetries: 0);
 
-        $settings->validate();
-
-        $this->assertSame(1, $settings->getChunkSize());
-        $this->assertSame(1, $settings->getMaxChildren());
-        $this->assertSame(0, $settings->getMaxRetries());
+        $this->assertSame(1, $settings->chunkSize);
+        $this->assertSame(1, $settings->maxChildren);
+        $this->assertSame(0, $settings->maxRetries);
     }
 
-    private function completeSettings(): Settings
+    #[Test]
+    public function itDefaultsEverythingButTheIteratorAndTheChildProcessor(): void
     {
-        return new Settings()
-            ->setIterator($this->createStub(IteratorInterface::class))
-            ->setChildProcessor($this->createStub(ChildProcessorInterface::class))
-        ;
+        $settings = $this->settings();
+
+        $this->assertNull($settings->logger);
+        $this->assertSame(1, $settings->maxChildren);
+        $this->assertSame(10, $settings->chunkSize);
+        $this->assertTrue($settings->retryOnFatal);
+        $this->assertSame(1, $settings->maxRetries);
+        $this->assertFalse($settings->exitOnFatal);
+    }
+
+    #[Test]
+    public function itThrowsSomethingEveryConsumerCanCatchWithOneType(): void
+    {
+        $this->expectException(ExceptionInterface::class);
+
+        $this->settings(chunkSize: 0);
+    }
+
+    private function settings(int $maxChildren = 1, int $chunkSize = 10, int $maxRetries = 1): Settings
+    {
+        return new Settings(
+            iterator: $this->createStub(IteratorInterface::class),
+            childProcessor: $this->createStub(ChildProcessorInterface::class),
+            maxChildren: $maxChildren,
+            chunkSize: $chunkSize,
+            maxRetries: $maxRetries,
+        );
     }
 }

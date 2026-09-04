@@ -1,7 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace MultiProcessor\Log;
 
+use Override;
 use Psr\Log\AbstractLogger;
 use Stringable;
 
@@ -12,6 +15,7 @@ final class CommandLineLogger extends AbstractLogger
      * @param string|Stringable $message
      * @param mixed[] $context
      */
+    #[Override]
     public function log($level, $message, array $context = []): void
     {
         echo date('H:i:s')

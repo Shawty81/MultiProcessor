@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Fills the pool with three children. The first exits with a status the parent does not
  * know, the other two outlive that moment and write to MP_MARKER_FILE if they are still
@@ -29,8 +31,10 @@ $childProcessor = new class ($markerFile) implements ChildProcessorInterface {
         private readonly string $markerFile
     ) {}
 
+    #[Override]
     public function init(): void {}
 
+    #[Override]
     public function process(Chunk $chunk): void
     {
         if ($chunk->data === ['exit-with-42']) {
@@ -42,15 +46,16 @@ $childProcessor = new class ($markerFile) implements ChildProcessorInterface {
         file_put_contents($this->markerFile, "still alive\n", FILE_APPEND);
     }
 
+    #[Override]
     public function finish(): void {}
 };
 
-$settings = new Settings()
-    ->setIterator($iterator)
-    ->setChildProcessor($childProcessor)
-    ->setLogger(new CommandLineLogger())
-    ->setChunkSize(1)
-    ->setMaxChildren(3)
-;
+$settings = new Settings(
+    iterator: $iterator,
+    childProcessor: $childProcessor,
+    logger: new CommandLineLogger(),
+    chunkSize: 1,
+    maxChildren: 3,
+);
 
 new MultiProcessor($settings)->run();

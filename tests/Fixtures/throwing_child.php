@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Runs a single chunk through a ChildProcessor that always throws.
  *
@@ -20,28 +22,28 @@ $iterator = new ArrayIterator();
 $iterator->setArray(['the only row']);
 
 $childProcessor = new class implements ChildProcessorInterface {
+    #[Override]
     public function init(): void {}
 
+    #[Override]
     public function process(Chunk $chunk): void
     {
         throw new RuntimeException('the child blew up');
     }
 
+    #[Override]
     public function finish(): void {}
 };
 
-$settings = new Settings()
-    ->setIterator($iterator)
-    ->setChildProcessor($childProcessor)
-    ->setLogger(new CommandLineLogger())
-    ->setChunkSize(1)
-    ->setMaxChildren(1)
-;
-
 $maxRetries = getenv('MP_MAX_RETRIES');
 
-if ($maxRetries !== false) {
-    $settings->setMaxRetries((int) $maxRetries);
-}
+$settings = new Settings(
+    iterator: $iterator,
+    childProcessor: $childProcessor,
+    logger: new CommandLineLogger(),
+    chunkSize: 1,
+    maxChildren: 1,
+    maxRetries: $maxRetries === false ? 1 : (int) $maxRetries,
+);
 
 new MultiProcessor($settings)->run();

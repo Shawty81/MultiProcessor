@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace MultiProcessor\Tests;
 
 use MultiProcessor\ChildProcessor\ChildProcessorInterface;
@@ -29,11 +31,11 @@ class MultiProcessorTest extends TestCase
             ->expects($this->once())
             ->method('init');
 
-        $settings = new Settings()
-            ->setIterator($iterator)
-            ->setChildProcessor($childProcessor)
-            ->setMaxChildren(10)
-        ;
+        $settings = new Settings(
+            iterator: $iterator,
+            childProcessor: $childProcessor,
+            maxChildren: 10,
+        );
 
         $mp = new MultiProcessor($settings);
 
@@ -57,11 +59,11 @@ class MultiProcessorTest extends TestCase
             ->expects($this->once())
             ->method('finish');
 
-        $settings = new Settings()
-            ->setIterator($iterator)
-            ->setChildProcessor($childProcessor)
-            ->setMaxChildren(10)
-        ;
+        $settings = new Settings(
+            iterator: $iterator,
+            childProcessor: $childProcessor,
+            maxChildren: 10,
+        );
 
         $mp = new MultiProcessor($settings);
 
@@ -83,11 +85,11 @@ class MultiProcessorTest extends TestCase
 
         $childProcessor = $this->createStub(ChildProcessorInterface::class);
 
-        $settings = new Settings()
-            ->setIterator($iterator)
-            ->setChildProcessor($childProcessor)
-            ->setMaxChildren(10)
-        ;
+        $settings = new Settings(
+            iterator: $iterator,
+            childProcessor: $childProcessor,
+            maxChildren: 10,
+        );
 
         $mp = new MultiProcessor($settings);
 
