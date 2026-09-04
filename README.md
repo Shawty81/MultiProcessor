@@ -44,7 +44,7 @@ use MultiProcessor\Queue\Chunk;
 use MultiProcessor\Settings;
 use Psr\Log\LoggerAwareTrait;
 
-final class SquareEverything implements ChildProcessorInterface
+final class GenerateThumbnails implements ChildProcessorInterface
 {
     use LoggerAwareTrait;
 
@@ -54,11 +54,14 @@ final class SquareEverything implements ChildProcessorInterface
     #[Override]
     public function process(Chunk $chunk): void
     {
-        foreach ($chunk->data as $number) {
-            $this->logger?->info('pid {pid}: {number} squared is {result}', [
+        foreach ($chunk->data as $image) {
+            // Stands in for the real work: reading the file, resizing it and writing
+            // the result back. A quarter of a second of it, without the dependencies.
+            usleep(250_000);
+
+            $this->logger?->info('pid {pid}: resized {image}', [
                 'pid' => posix_getpid(),
-                'number' => $number,
-                'result' => $number ** 2,
+                'image' => $image,
             ]);
         }
     }
@@ -70,9 +73,12 @@ final class SquareEverything implements ChildProcessorInterface
 $logger = new CommandLineLogger();
 
 $iterator = new ArrayIterator();
-$iterator->setArray(range(1, 20));
+$iterator->setArray(array_map(
+    static fn (int $number): string => sprintf('photo-%02d.jpg', $number),
+    range(1, 20),
+));
 
-$childProcessor = new SquareEverything();
+$childProcessor = new GenerateThumbnails();
 $childProcessor->setLogger($logger);
 
 $settings = new Settings(
@@ -86,20 +92,30 @@ $settings = new Settings(
 new MultiProcessor($settings)->run();
 ```
 
-Run it and you get four children working on five numbers each, followed by a summary:
+Run it and you get four children resizing five images each, so the twenty quarter-second
+jobs take about a second and a quarter instead of five seconds:
 
 ```
 15:04:05 [I]  Starting MultiProcessor
 15:04:05 [I]  Parent pid: 4711
 15:04:05 [I]  Chunks to process: 4
 15:04:05 [I]
-15:04:05 [I]  pid 4712: 1 squared is 1
+15:04:05 [I]  pid 4712: resized photo-01.jpg
+15:04:05 [I]  pid 4713: resized photo-06.jpg
+15:04:05 [I]  pid 4714: resized photo-11.jpg
+15:04:05 [I]  pid 4715: resized photo-16.jpg
+15:04:05 [I]  pid 4712: resized photo-02.jpg
 ...
-15:04:05 [I]  MultiProcessor done!
-15:04:05 [I]
-15:04:05 [I]  Total time spent: 0 hours, 0 minutes and 0 seconds
-15:04:05 [I]  Chunks handed to a child: 4
+15:04:06 [I]  pid 4715: resized photo-20.jpg
+15:04:06 [I]
+15:04:06 [I]  MultiProcessor done!
+15:04:06 [I]
+15:04:06 [I]  Total time spent: 0 hours, 0 minutes and 1 seconds
+15:04:06 [I]  Chunks handed to a child: 4
 ```
+
+The `usleep()` is there because forking is only worth it when a record costs real time.
+[Forking is not free](#forking-is-not-free) puts a number on that.
 
 ## The two interfaces you implement
 
@@ -243,6 +259,36 @@ $settings = new Settings(
 A value outside those bounds throws `InvalidSettingsException` from the constructor, so a
 misconfigured run fails before anything is forked.
 
+### Forking is not free
+
+Every chunk costs one `pcntl_fork()` and one reap, and that cost is roughly fixed however
+much or little the chunk goes on to do. On this machine it is about 390 microseconds per
+chunk, measured by running 20000 records of trivial work (one multiplication each) through
+the library at `maxChildren: 8` and varying only `chunkSize`:
+
+| `chunkSize` | Total | Per record | Per chunk |
+| --- | --- | --- | --- |
+| `1` | 7.74 s | 387 us | 387 us |
+| `10` | 0.78 s | 38.8 us | 388 us |
+| `100` | 0.08 s | 4.0 us | 398 us |
+| `1000` | 0.01 s | 0.5 us | 520 us |
+
+The same 20000 records in a plain `foreach` take 0.0001 s in total, about 0.007 us each.
+
+Measured on 16 cores under the `php:8.5-cli` image, so treat the numbers as indicative of
+the shape rather than as a guarantee: the constant differs per machine, kernel and
+container runtime, but it is a constant either way.
+
+What it implies:
+
+- A chunk has to do substantially more than half a millisecond of work before forking it
+  pays for itself. Work that is faster than that runs quicker in a plain `foreach`, and
+  this library is pure overhead.
+- The point of a chunk is to amortise that fixed cost over many records, so the default
+  `chunkSize` of `10` is low for most real workloads. Raise it until a chunk takes long
+  enough that the fork disappears into it, while staying short enough that a chunk lost to
+  a failure is not much work to redo.
+
 ## What happens when a child fails
 
 A child fails in one of two ways, and the parent treats them the same.
@@ -339,4 +385,4 @@ they are caught, logged and turned into a failed chunk, as described above.
 
 ## License
 
-Apache-2.0. See [LICENSE](LICENSE).
+MIT. See [LICENSE](LICENSE).
