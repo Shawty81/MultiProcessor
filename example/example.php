@@ -30,8 +30,8 @@ final class Processor implements ChildProcessorInterface
                 ['pid' => getmypid(), 'seconds' => $seconds]
             );
 
-            // There is an 80% chance this child fails halfway through processing
-            $error = mt_rand(0, 10) > 8;
+            // There is a 20% chance this child fails halfway through processing
+            $error = mt_rand(1, 5) === 1;
             if ($error) {
                 sleep(intdiv($seconds, 2));
                 throw new Exception('test');
