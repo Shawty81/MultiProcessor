@@ -70,11 +70,9 @@ class MultiProcessor implements LoggerAwareInterface
 
     private function startProcessing(): void
     {
-        declare(ticks=1) {
-            do {
-                $loop = $this->loop();
-            } while ($loop);
-        }
+        do {
+            $loop = $this->loop();
+        } while ($loop);
     }
 
     private function loop(): bool
