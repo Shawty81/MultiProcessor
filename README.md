@@ -117,6 +117,14 @@ jobs take about a second and a quarter instead of five seconds:
 The `usleep()` is there because forking is only worth it when a record costs real time.
 [Forking is not free](#forking-is-not-free) puts a number on that.
 
+`ArrayIterator` accepts any array. A plain list, an associative array, rows keyed by
+their database id, the output of `array_filter()`, an array with gaps left by `unset()`,
+one holding `null` values: all of them hand out every record they contain.
+
+What it does not carry through is the keys. A chunk holds values, in the array's own
+order, so rows keyed by their database id arrive without those ids. When a key means
+something, put it inside the value as well and the child processor will have it.
+
 ## The two interfaces you implement
 
 ### `IteratorInterface`
